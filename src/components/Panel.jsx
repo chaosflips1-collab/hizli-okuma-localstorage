@@ -1,27 +1,52 @@
-// src/components/Panel.jsx
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-export default function Panel() {
-  const location = useLocation();
-  const { name, surname, className, code } = location.state || {};
+export default function Panel({ student }) {
+  const navigate = useNavigate();
 
   return (
     <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h2>Hoş geldin {name} {surname}</h2>
-      <p>Sınıf: {className} | Kod: {code}</p>
+      <h2>
+        Hoş geldin {student?.name} {student?.surname}
+      </h2>
+      <p>
+        Sınıf: {student?.className} | Kod: {student?.code}
+      </p>
 
-      <h3>Burada üniteler ve egzersizler olacak.</h3>
-
-      <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "20px" }}>
-        <button style={{ padding: "20px", backgroundColor: "green", color: "white", borderRadius: "8px" }}>
-          1. Ünite
+      <h3 style={{ marginTop: "30px" }}>Egzersizler</h3>
+      <div style={{ marginTop: "20px" }}>
+        <button
+          style={{
+            padding: "15px 30px",
+            fontSize: "16px",
+            margin: "10px",
+            cursor: "pointer",
+          }}
+          onClick={() => navigate("/takistoskop")}
+        >
+          Egzersiz 1: Takistoskop
         </button>
-        <button style={{ padding: "20px", backgroundColor: "gray", color: "white", borderRadius: "8px" }}>
-          2. Ünite
+        <button
+          style={{
+            padding: "15px 30px",
+            fontSize: "16px",
+            margin: "10px",
+            cursor: "pointer",
+          }}
+          onClick={() => navigate("/kosesel")}
+        >
+          Egzersiz 2: Köşesel
         </button>
-        <button style={{ padding: "20px", backgroundColor: "gray", color: "white", borderRadius: "8px" }}>
-          3. Ünite
+        <button
+          style={{
+            padding: "15px 30px",
+            fontSize: "16px",
+            margin: "10px",
+            cursor: "pointer",
+          }}
+          onClick={() => navigate("/acili")}
+        >
+          Egzersiz 3: Açılı
         </button>
       </div>
     </div>
