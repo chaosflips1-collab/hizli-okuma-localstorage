@@ -10,6 +10,7 @@ import {
   doc,
   query,
   orderBy,
+  where,
 } from "firebase/firestore";
 
 export default function AdminPanel() {
@@ -49,20 +50,39 @@ export default function AdminPanel() {
     fetchCodes();
   };
 
-  // Reset & Sil fonksiyonları
-  const resetCode = async (id) => {
+  // Öğrenciyi sil (students koleksiyonundan)
+  const removeStudent = async (lockedTo) => {
+    if (!lockedTo) return;
+    const q = query(
+      collection(db, "students"),
+      where("code", "==", lockedTo.code),
+      where("name", "==", lockedTo.name),
+      where("surname", "==", lockedTo.surname),
+      where("className", "==", lockedTo.className)
+    );
+    const snapshot = await getDocs(q);
+
+    snapshot.forEach(async (docSnap) => {
+      await deleteDoc(doc(db, "students", docSnap.id));
+    });
+  };
+
+  // Resetle → kod boşalır + öğrenci silinir
+  const resetCode = async (id, lockedTo) => {
     const ref = doc(db, "codes", id);
     await updateDoc(ref, { lockedTo: null });
+    await removeStudent(lockedTo);
     fetchCodes();
   };
 
-  const deleteCode = async (id) => {
+  // Sil → kod tamamen silinir + öğrenci silinir
+  const deleteCode = async (id, lockedTo) => {
+    await removeStudent(lockedTo);
     const ref = doc(db, "codes", id);
     await deleteDoc(ref);
     fetchCodes();
   };
 
-  // 🔓 Admin paneli
   return (
     <div
       style={{
@@ -111,7 +131,7 @@ export default function AdminPanel() {
             </span>
             <div style={{ display: "flex", gap: "8px" }}>
               <button
-                onClick={() => resetCode(c.id)}
+                onClick={() => resetCode(c.id, c.lockedTo)}
                 style={{
                   backgroundColor: "orange",
                   border: "none",
@@ -124,7 +144,7 @@ export default function AdminPanel() {
                 ♻ Resetle
               </button>
               <button
-                onClick={() => deleteCode(c.id)}
+                onClick={() => deleteCode(c.id, c.lockedTo)}
                 style={{
                   backgroundColor: "red",
                   border: "none",

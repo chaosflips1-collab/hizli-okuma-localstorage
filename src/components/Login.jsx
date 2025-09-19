@@ -51,13 +51,21 @@ export default function Login() {
         // Kod kilitleme
         await updateDoc(codeRef, { lockedTo: studentData });
 
-        // 3️⃣ Öğrenciyi ayrı koleksiyona kaydet
+        // Öğrenciyi ayrı koleksiyona kaydet
         await addDoc(collection(db, "students"), studentData);
 
-        // 4️⃣ Panele yönlendir
         navigate("/panel", { state: studentData });
       } else {
-        setError("❌ Bu kod zaten kullanılıyor!");
+        // 🔑 Eğer aynı öğrenci tekrar giriş yapıyorsa izin ver
+        if (
+          codeData.lockedTo.name === name &&
+          codeData.lockedTo.surname === surname &&
+          codeData.lockedTo.className === className
+        ) {
+          navigate("/panel", { state: codeData.lockedTo });
+        } else {
+          setError("❌ Bu kod zaten kullanılıyor!");
+        }
       }
     } catch (err) {
       console.error("Hata:", err);
