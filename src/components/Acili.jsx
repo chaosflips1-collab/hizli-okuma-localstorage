@@ -1,27 +1,23 @@
+// src/components/Acili.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Acili() {
   const navigate = useNavigate();
 
-  // Egzersiz ayarları
   const [bgColor, setBgColor] = useState("#ffffff");
   const [font, setFont] = useState("Arial");
   const [fontSize, setFontSize] = useState(32);
 
-  // Egzersiz state
   const [running, setRunning] = useState(false);
   const [time, setTime] = useState(0);
-  const [phase, setPhase] = useState("down"); // down → inward → outward
+  const [phase, setPhase] = useState("down");
   const [letters, setLetters] = useState([]);
 
-  // Hız state (dinamik olacak)
   const [speed, setSpeed] = useState(1000);
 
-  // Harf listesi
   const pool = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ".split("");
 
-  // Rastgele harf oluştur
   const generateLetters = () => {
     let arr = [];
     for (let i = 0; i < 10; i++) {
@@ -30,7 +26,6 @@ export default function Acili() {
     return arr;
   };
 
-  // Egzersizi başlat
   const startExercise = () => {
     setRunning(true);
     setTime(0);
@@ -38,7 +33,6 @@ export default function Acili() {
     setLetters(generateLetters());
   };
 
-  // Süre ve hız yönetimi
   useEffect(() => {
     let timer;
     if (running) {
@@ -46,12 +40,10 @@ export default function Acili() {
         setTime((prev) => {
           const newTime = prev + 1;
 
-          // Hız artırma mantığı
-          if (newTime <= 60) setSpeed(1000); // ilk 1 dk
-          else if (newTime <= 120) setSpeed(700); // 2. dk
-          else setSpeed(500); // 3. dk
+          if (newTime <= 60) setSpeed(1000);
+          else if (newTime <= 120) setSpeed(700);
+          else setSpeed(500);
 
-          // Phase değiştir
           if (newTime % 3 === 0) {
             setPhase((prevPhase) =>
               prevPhase === "down"
@@ -63,12 +55,11 @@ export default function Acili() {
             setLetters(generateLetters());
           }
 
-          // 180 sn sonunda bitir
           if (newTime >= 180) {
             clearInterval(timer);
             setRunning(false);
             alert("Açılı Okuma Egzersizi tamamlandı!");
-            navigate("/anlama"); // 👉 sonraki egzersize geçiş
+            navigate("/panel");
             return prev;
           }
 
@@ -79,7 +70,6 @@ export default function Acili() {
     return () => clearInterval(timer);
   }, [running, navigate]);
 
-  // Çıkış
   const exitExercise = () => {
     setRunning(false);
     setLetters([]);
@@ -87,7 +77,6 @@ export default function Acili() {
     navigate("/panel");
   };
 
-  // Faz mantığına göre pozisyonlama
   const getLetterStyle = (index) => {
     const baseX = (index % 10) * 40 + 20;
     const baseY = Math.floor(index / 10) * 40 + 40;
@@ -103,19 +92,23 @@ export default function Acili() {
   };
 
   return (
-    <div style={{ textAlign: "center", margin: "20px", fontFamily: "Arial" }}>
-      <h2>Açılı Okuma Egzersizi</h2>
+    <div style={{ textAlign: "center", margin: "20px", fontFamily: "Comic Sans MS" }}>
+      <h2 style={{ color: "#e91e63", textShadow: "2px 2px #f8bbd0" }}>
+        📐 Açılı Okuma Egzersizi
+      </h2>
 
       {/* Harf Alanı */}
       <div
         style={{
-          width: "600px",
+          width: "650px",
           height: "300px",
           margin: "0 auto",
-          border: "2px solid #333",
+          border: "4px solid #e91e63",
+          borderRadius: "15px",
           backgroundColor: bgColor,
           position: "relative",
           overflow: "hidden",
+          boxShadow: "4px 4px 12px rgba(0,0,0,0.2)",
         }}
       >
         {letters.map((ltr, idx) => (
@@ -126,6 +119,7 @@ export default function Acili() {
               fontFamily: font,
               fontSize: `${fontSize}px`,
               fontWeight: "bold",
+              color: "#333",
               ...getLetterStyle(idx),
             }}
           >
@@ -137,22 +131,24 @@ export default function Acili() {
       {/* Başarı Tablosu */}
       <div
         style={{
-          width: "200px",
-          border: "2px solid #333",
-          padding: "10px",
+          width: "260px",
+          border: "3px solid #ff5722",
+          borderRadius: "15px",
+          padding: "15px",
           margin: "20px auto",
+          backgroundColor: "#fff3e0",
           textAlign: "left",
-          boxShadow: "2px 2px 6px rgba(0,0,0,0.3)",
+          boxShadow: "4px 4px 12px rgba(0,0,0,0.2)",
         }}
       >
-        <h4>Başarı Tablosu</h4>
-        <p>Kalan Süre: {180 - time} sn</p>
-        <p>Hız: {speed} ms</p>
+        <h4 style={{ color: "#ff5722" }}>📊 Başarı Tablosu</h4>
+        <p>⏳ Kalan Süre: {180 - time} sn</p>
+        <p>⚡ Hız: {speed} ms</p>
       </div>
 
       {/* İstatistik Tablosu */}
       <div style={{ marginTop: "20px" }}>
-        <h3>İstatistik Tablosu</h3>
+        <h3 style={{ color: "#9c27b0" }}>📈 İstatistik Tablosu</h3>
         <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
           {Array.from({ length: 10 }, (_, i) => {
             const lvl = i + 1;
@@ -160,18 +156,20 @@ export default function Acili() {
               <div
                 key={lvl}
                 style={{
-                  width: "30px",
-                  height: "30px",
-                  border: "1px solid #333",
+                  width: "35px",
+                  height: "35px",
+                  border: "2px solid #9c27b0",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  borderRadius: "8px",
                   backgroundColor:
                     time / 18 >= lvl
-                      ? "green"
+                      ? "#4caf50"
                       : time / 18 + 1 === lvl
-                      ? "yellow"
+                      ? "#ffeb3b"
                       : "white",
+                  fontWeight: "bold",
                 }}
               >
                 {lvl}
@@ -185,15 +183,17 @@ export default function Acili() {
       <div
         style={{
           marginTop: "20px",
-          border: "2px solid #333",
-          padding: "15px",
+          border: "3px dashed #3f51b5",
+          borderRadius: "15px",
+          padding: "20px",
           width: "500px",
           marginLeft: "auto",
           marginRight: "auto",
-          boxShadow: "2px 2px 6px rgba(0,0,0,0.3)",
+          backgroundColor: "#e8eaf6",
+          boxShadow: "4px 4px 12px rgba(0,0,0,0.2)",
         }}
       >
-        <h4>Ayarlar Menüsü</h4>
+        <h4 style={{ color: "#3f51b5" }}>⚙️ Ayarlar Menüsü</h4>
         <div style={{ margin: "10px 0" }}>
           <label>Zemin Renk: </label>
           <input
@@ -205,11 +205,7 @@ export default function Acili() {
         </div>
         <div style={{ margin: "10px 0" }}>
           <label>Font: </label>
-          <select
-            value={font}
-            onChange={(e) => setFont(e.target.value)}
-            disabled={running}
-          >
+          <select value={font} onChange={(e) => setFont(e.target.value)} disabled={running}>
             <option value="Arial">Arial</option>
             <option value="Verdana">Verdana</option>
             <option value="Courier New">Courier New</option>
@@ -236,12 +232,13 @@ export default function Acili() {
             padding: "15px 40px",
             fontSize: "20px",
             fontWeight: "bold",
-            backgroundColor: "green",
+            backgroundColor: "#4CAF50",
             color: "white",
             border: "none",
-            borderRadius: "6px",
+            borderRadius: "12px",
             marginRight: "10px",
             cursor: "pointer",
+            boxShadow: "3px 3px 8px rgba(0,0,0,0.2)",
           }}
           onClick={startExercise}
           disabled={running}
@@ -253,11 +250,12 @@ export default function Acili() {
             padding: "15px 40px",
             fontSize: "20px",
             fontWeight: "bold",
-            backgroundColor: "red",
+            backgroundColor: "#f44336",
             color: "white",
             border: "none",
-            borderRadius: "6px",
+            borderRadius: "12px",
             cursor: "pointer",
+            boxShadow: "3px 3px 8px rgba(0,0,0,0.2)",
           }}
           onClick={exitExercise}
         >

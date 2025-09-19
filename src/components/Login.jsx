@@ -7,9 +7,9 @@ import {
   query,
   where,
   getDocs,
-  setDoc,
+  updateDoc,
+  addDoc,
   doc,
-  serverTimestamp,
 } from "firebase/firestore";
 
 export default function Login() {
@@ -25,35 +25,39 @@ export default function Login() {
     setError("");
 
     try {
-      const q = query(
-        collection(db, "students"),
-        where("code", "==", code)
-      );
-
+      // 1️⃣ Kod Firestore'da var mı?
+      const q = query(collection(db, "codes"), where("code", "==", code));
       const querySnapshot = await getDocs(q);
 
-      if (!querySnapshot.empty) {
-        // öğrenci kaydını güncelle
-        const studentRef = doc(db, "students", code);
-        await setDoc(studentRef, {
+      if (querySnapshot.empty) {
+        setError("⚠ Kod bulunamadı!");
+        return;
+      }
+
+      const docSnap = querySnapshot.docs[0];
+      const codeRef = doc(db, "codes", docSnap.id);
+      const codeData = docSnap.data();
+
+      // 2️⃣ Eğer kod boşsa → öğrenciye kilitle
+      if (!codeData.lockedTo) {
+        const studentData = {
+          code,
           name,
           surname,
           className,
-          code,
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
+          createdAt: new Date(),
+        };
 
-        // bilgileri Panel'e gönder
-        navigate("/panel", {
-          state: {
-            name,
-            surname,
-            className,
-            code
-          }
-        });
+        // Kod kilitleme
+        await updateDoc(codeRef, { lockedTo: studentData });
+
+        // 3️⃣ Öğrenciyi ayrı koleksiyona kaydet
+        await addDoc(collection(db, "students"), studentData);
+
+        // 4️⃣ Panele yönlendir
+        navigate("/panel", { state: studentData });
       } else {
-        setError("Kod bulunamadı!");
+        setError("❌ Bu kod zaten kullanılıyor!");
       }
     } catch (err) {
       console.error("Hata:", err);
@@ -71,9 +75,11 @@ export default function Login() {
           borderRadius: "8px",
           width: "300px",
           textAlign: "center",
+          background: "white",
+          boxShadow: "0px 4px 10px rgba(0,0,0,0.2)",
         }}
       >
-        <h2>Öğrenci Girişi</h2>
+        <h2>🎓 Öğrenci Girişi</h2>
         <input
           type="text"
           placeholder="Kod"
@@ -107,7 +113,19 @@ export default function Login() {
           style={{ width: "100%", marginBottom: "10px" }}
         />
         {error && <p style={{ color: "red" }}>{error}</p>}
-        <button type="submit">Giriş Yap</button>
+        <button
+          type="submit"
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "dodgerblue",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          🚀 Giriş Yap
+        </button>
       </form>
     </div>
   );

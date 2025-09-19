@@ -36,3 +36,37 @@
     transform: rotate(360deg);
   }
 }
+body {
+  background: linear-gradient(to bottom, #fefcea, #f1da36);
+  font-family: "Comic Sans MS", "Poppins", Arial, sans-serif;
+}
+
+h2 {
+  color: #333366;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+button {
+  border-radius: 12px;
+  padding: 15px 40px;
+  font-size: 20px;
+  font-weight: bold;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+  transition: transform 0.1s ease-in-out;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+div {
+  border-radius: 10px;
+}
+
+.stat-box, .info-box, .settings-box {
+  border: 2px solid #444;
+  border-radius: 12px;
+  background: #fff8dc;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+  padding: 10px;
+}

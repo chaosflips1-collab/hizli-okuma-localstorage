@@ -1,43 +1,33 @@
+// src/components/Kosesel.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Kosesel() {
   const navigate = useNavigate();
 
-  // Ayarlar
-  const [material, setMaterial] = useState("harf");
   const [bgColor, setBgColor] = useState("#ffffff");
   const [font, setFont] = useState("Arial");
   const [fontSize, setFontSize] = useState(48);
+
+  const [time, setTime] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [letters, setLetters] = useState(["", ""]);
+
   const [speed, setSpeed] = useState(1000);
 
-  // Egzersiz state
-  const [leftItem, setLeftItem] = useState("");
-  const [rightItem, setRightItem] = useState("");
-  const [running, setRunning] = useState(false);
-  const [time, setTime] = useState(0);
+  const pool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
-  // Materyal listeleri
-  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-  const numbers = Array.from({ length: 10 }, (_, i) => i.toString());
-  const words = ["masa", "kitap", "araba", "çocuk", "okul", "kalem"];
-
-  const getRandomItem = () => {
-    if (material === "harf") {
-      return letters[Math.floor(Math.random() * letters.length)];
-    } else if (material === "rakam") {
-      return numbers[Math.floor(Math.random() * numbers.length)];
-    } else {
-      return words[Math.floor(Math.random() * words.length)];
-    }
-  };
+  const generateLetters = () => [
+    pool[Math.floor(Math.random() * pool.length)],
+    pool[Math.floor(Math.random() * pool.length)],
+  ];
 
   const startExercise = () => {
     setRunning(true);
     setTime(0);
+    setLetters(generateLetters());
   };
 
-  // Zaman sayacı ve hız kontrolü
   useEffect(() => {
     let interval;
     if (running) {
@@ -45,18 +35,16 @@ export default function Kosesel() {
         setTime((prev) => {
           const newTime = prev + 1;
 
-          // Hız değişimleri
-          if (newTime === 60) setSpeed(800);
-          if (newTime === 120) setSpeed(600);
+          if (newTime % 3 === 0) setLetters(generateLetters());
 
-          // Egzersiz bitiş (3 dakika = 180 saniye)
           if (newTime >= 180) {
             clearInterval(interval);
             setRunning(false);
-            alert("Köşesel Egzersiz sona erdi!");
-            navigate("/panel"); // 👉 Egzersiz sonrası panele dön
+            alert("Köşesel Egzersiz tamamlandı!");
+            navigate("/acili");
             return prev;
           }
+
           return newTime;
         });
       }, 1000);
@@ -64,112 +52,76 @@ export default function Kosesel() {
     return () => clearInterval(interval);
   }, [running, navigate]);
 
-  // Harf gösterimi (otomatik değişim)
-  useEffect(() => {
-    let changeInterval;
-    if (running) {
-      changeInterval = setInterval(() => {
-        setLeftItem(getRandomItem());
-        setRightItem(getRandomItem());
-      }, speed);
-    }
-    return () => clearInterval(changeInterval);
-  }, [running, speed, material]);
-
   const exitExercise = () => {
     setRunning(false);
-    setLeftItem("");
-    setRightItem("");
+    setLetters(["", ""]);
     alert("Egzersizden çıkış yapıldı.");
     navigate("/panel");
   };
 
   return (
-    <div style={{ textAlign: "center", margin: "20px", fontFamily: "Arial" }}>
-      <h2>Köşesel Çalışma</h2>
+    <div style={{ textAlign: "center", margin: "20px", fontFamily: "Comic Sans MS" }}>
+      <h2 style={{ color: "#3f51b5", textShadow: "2px 2px #bbdefb" }}>🔲 Köşesel Çalışma 🔲</h2>
 
-      {/* Panel */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "20px",
-          marginTop: "20px",
-        }}
-      >
-        <div
-          style={{
-            width: "200px",
-            height: "150px",
-            border: "2px solid #333",
-            backgroundColor: bgColor,
-            fontFamily: font,
-            fontSize: `${fontSize}px`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {leftItem}
-        </div>
-        <div
-          style={{
-            width: "200px",
-            height: "150px",
-            border: "2px solid #333",
-            backgroundColor: bgColor,
-            fontFamily: font,
-            fontSize: `${fontSize}px`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {rightItem}
-        </div>
+      {/* Gösterim Alanı */}
+      <div style={{ display: "flex", justifyContent: "center", gap: "30px" }}>
+        {letters.map((ltr, i) => (
+          <div
+            key={i}
+            style={{
+              width: "200px",
+              height: "150px",
+              border: "4px solid #3f51b5",
+              borderRadius: "15px",
+              backgroundColor: bgColor,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontFamily: font,
+              fontSize: `${fontSize}px`,
+              fontWeight: "bold",
+              color: "#333",
+              boxShadow: "4px 4px 12px rgba(0,0,0,0.2)",
+            }}
+          >
+            {ltr}
+          </div>
+        ))}
       </div>
 
       {/* Bilgi Tablosu */}
       <div
         style={{
-          width: "300px",
-          border: "2px solid #333",
+          width: "260px",
+          border: "3px solid #ff9800",
+          borderRadius: "15px",
+          padding: "15px",
           margin: "20px auto",
-          padding: "10px",
+          backgroundColor: "#fff8e1",
           textAlign: "left",
-          boxShadow: "2px 2px 6px rgba(0,0,0,0.3)",
+          boxShadow: "4px 4px 12px rgba(0,0,0,0.2)",
         }}
       >
-        <h4>Bilgi Tablosu</h4>
-        <p>Kalan Süre: {(180 - time).toFixed(0)} sn</p>
-        <p>Hız: {speed} ms</p>
+        <h4 style={{ color: "#ff9800" }}>📋 Bilgi Tablosu</h4>
+        <p>⏳ Kalan Süre: {180 - time} sn</p>
+        <p>⚡ Hız: {speed} ms</p>
       </div>
 
       {/* Ayarlar */}
       <div
         style={{
           marginTop: "20px",
-          border: "2px solid #333",
-          padding: "15px",
-          width: "400px",
+          border: "3px dashed #009688",
+          borderRadius: "15px",
+          padding: "20px",
+          width: "500px",
           marginLeft: "auto",
           marginRight: "auto",
-          boxShadow: "2px 2px 6px rgba(0,0,0,0.3)",
+          backgroundColor: "#e0f2f1",
+          boxShadow: "4px 4px 12px rgba(0,0,0,0.2)",
         }}
       >
-        <h4>Ayarlar Menüsü</h4>
-        <div style={{ margin: "10px 0" }}>
-          <label>Materyal: </label>
-          <select
-            value={material}
-            onChange={(e) => setMaterial(e.target.value)}
-            disabled={running}
-          >
-            <option value="harf">Harf</option>
-            <option value="kelime">Kelime</option>
-            <option value="rakam">Rakam</option>
-          </select>
-        </div>
+        <h4 style={{ color: "#009688" }}>⚙️ Ayarlar Menüsü</h4>
         <div style={{ margin: "10px 0" }}>
           <label>Zemin Renk: </label>
           <input
@@ -181,11 +133,7 @@ export default function Kosesel() {
         </div>
         <div style={{ margin: "10px 0" }}>
           <label>Font: </label>
-          <select
-            value={font}
-            onChange={(e) => setFont(e.target.value)}
-            disabled={running}
-          >
+          <select value={font} onChange={(e) => setFont(e.target.value)} disabled={running}>
             <option value="Arial">Arial</option>
             <option value="Verdana">Verdana</option>
             <option value="Courier New">Courier New</option>
@@ -212,12 +160,13 @@ export default function Kosesel() {
             padding: "15px 40px",
             fontSize: "20px",
             fontWeight: "bold",
-            backgroundColor: "green",
+            backgroundColor: "#4CAF50",
             color: "white",
             border: "none",
-            borderRadius: "6px",
+            borderRadius: "12px",
             marginRight: "10px",
             cursor: "pointer",
+            boxShadow: "3px 3px 8px rgba(0,0,0,0.2)",
           }}
           onClick={startExercise}
           disabled={running}
@@ -229,11 +178,12 @@ export default function Kosesel() {
             padding: "15px 40px",
             fontSize: "20px",
             fontWeight: "bold",
-            backgroundColor: "red",
+            backgroundColor: "#f44336",
             color: "white",
             border: "none",
-            borderRadius: "6px",
+            borderRadius: "12px",
             cursor: "pointer",
+            boxShadow: "3px 3px 8px rgba(0,0,0,0.2)",
           }}
           onClick={exitExercise}
         >
