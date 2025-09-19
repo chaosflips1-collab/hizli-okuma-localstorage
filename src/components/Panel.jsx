@@ -1,10 +1,32 @@
-import React from "react";
+// src/components/Panel.jsx
+import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { db } from "../firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function Panel() {
   const navigate = useNavigate();
   const location = useLocation();
-  const student = location.state || {};
+  const studentFromLogin = location.state;
+
+  const [student, setStudent] = useState(studentFromLogin || null);
+
+  // Firestore'dan güncel öğrenci verilerini çek
+  useEffect(() => {
+    const fetchStudent = async () => {
+      if (!studentFromLogin) return;
+      const ref = doc(db, "students", studentFromLogin.code);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        setStudent(snap.data());
+      }
+    };
+    fetchStudent();
+  }, [studentFromLogin]);
+
+  if (!student) {
+    return <p style={{ textAlign: "center", marginTop: "50px" }}>⏳ Yükleniyor...</p>;
+  }
 
   return (
     <div
@@ -17,7 +39,7 @@ export default function Panel() {
       }}
     >
       <h1 style={{ color: "#333", marginBottom: "10px" }}>
-        🎉 Hoş geldin {student?.name} {student?.surname}!
+        🎉 Hoş geldin {student.name} {student.surname}!
       </h1>
 
       <div
@@ -31,13 +53,13 @@ export default function Panel() {
         }}
       >
         <p style={{ fontSize: "18px", margin: "5px" }}>
-          👤 Ad Soyad: <b>{student?.name} {student?.surname || "-"}</b>
+          👤 Ad Soyad: <b>{student.name} {student.surname}</b>
         </p>
         <p style={{ fontSize: "18px", margin: "5px" }}>
-          📚 Sınıf: <b>{student?.className || "-"}</b>
+          📚 Sınıf: <b>{student.className}</b>
         </p>
         <p style={{ fontSize: "18px", margin: "5px" }}>
-          🆔 Kod: <b>{student?.code || "-"}</b>
+          🆔 Kod: <b>{student.code}</b>
         </p>
       </div>
 

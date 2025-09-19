@@ -8,8 +8,9 @@ import {
   where,
   getDocs,
   updateDoc,
-  addDoc,
   doc,
+  serverTimestamp,
+  setDoc
 } from "firebase/firestore";
 
 export default function Login() {
@@ -18,120 +19,89 @@ export default function Login() {
   const [surname, setSurname] = useState("");
   const [className, setClassName] = useState("");
   const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      // 1️⃣ Kod Firestore'da var mı?
+      // codes koleksiyonunda kodu ara
       const q = query(collection(db, "codes"), where("code", "==", code));
-      const querySnapshot = await getDocs(q);
+      const snap = await getDocs(q);
 
-      if (querySnapshot.empty) {
-        setError("⚠ Kod bulunamadı!");
+      if (snap.empty) {
+        setError("❌ Kod bulunamadı!");
         return;
       }
 
-      const docSnap = querySnapshot.docs[0];
-      const codeRef = doc(db, "codes", docSnap.id);
-      const codeData = docSnap.data();
+      const docSnap = snap.docs[0];
+      const docRef = docSnap.ref;
+      const data = docSnap.data();
 
-      // 2️⃣ Eğer kod boşsa → öğrenciye kilitle
-      if (!codeData.lockedTo) {
-        const studentData = {
-          code,
-          name,
-          surname,
-          className,
-          createdAt: new Date(),
-        };
-
-        // Kod kilitleme
-        await updateDoc(codeRef, { lockedTo: studentData });
-
-        // Öğrenciyi ayrı koleksiyona kaydet
-        await addDoc(collection(db, "students"), studentData);
-
-        navigate("/panel", { state: studentData });
-      } else {
-        // 🔑 Eğer aynı öğrenci tekrar giriş yapıyorsa izin ver
+      // Kod başka birine kilitlenmiş mi?
+      if (data.lockedTo && data.lockedTo.name) {
         if (
-          codeData.lockedTo.name === name &&
-          codeData.lockedTo.surname === surname &&
-          codeData.lockedTo.className === className
+          data.lockedTo.name !== name ||
+          data.lockedTo.surname !== surname ||
+          data.lockedTo.className !== className
         ) {
-          navigate("/panel", { state: codeData.lockedTo });
-        } else {
           setError("❌ Bu kod zaten kullanılıyor!");
+          return;
         }
       }
+
+      // codes güncelle
+      await updateDoc(docRef, {
+        lockedTo: { name, surname, className },
+        startedAt: data.startedAt ? data.startedAt : serverTimestamp(),
+        progress: data.progress || 0,
+      });
+
+      // students koleksiyonuna ekle/güncelle
+      await setDoc(doc(db, "students", code), {
+        code,
+        name,
+        surname,
+        className,
+        progress: data.progress || 0,
+        startedAt: data.startedAt ? data.startedAt : serverTimestamp(),
+      });
+
+      // Panel'e yönlendir, öğrenci bilgilerini state ile taşı
+      navigate("/panel", {
+        state: { code, name, surname, className },
+      });
     } catch (err) {
-      console.error("Hata:", err);
-      setError("Giriş sırasında hata oluştu.");
+      console.error("Login error:", err);
+      setError("⚠ Bir hata oluştu!");
     }
   };
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", marginTop: "50px" }}>
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleLogin}
         style={{
-          padding: "20px",
-          border: "1px solid #ccc",
-          borderRadius: "8px",
-          width: "300px",
-          textAlign: "center",
           background: "white",
-          boxShadow: "0px 4px 10px rgba(0,0,0,0.2)",
+          padding: "30px",
+          borderRadius: "12px",
+          boxShadow: "0px 4px 12px rgba(0,0,0,0.2)",
+          textAlign: "center",
+          width: "320px",
         }}
       >
-        <h2>🎓 Öğrenci Girişi</h2>
-        <input
-          type="text"
-          placeholder="Kod"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          required
-          style={{ width: "100%", marginBottom: "10px" }}
-        />
-        <input
-          type="text"
-          placeholder="Ad"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          style={{ width: "100%", marginBottom: "10px" }}
-        />
-        <input
-          type="text"
-          placeholder="Soyad"
-          value={surname}
-          onChange={(e) => setSurname(e.target.value)}
-          required
-          style={{ width: "100%", marginBottom: "10px" }}
-        />
-        <input
-          type="text"
-          placeholder="Sınıf (örn: 5/A)"
-          value={className}
-          onChange={(e) => setClassName(e.target.value)}
-          required
-          style={{ width: "100%", marginBottom: "10px" }}
-        />
+        <h2 style={{ marginBottom: "20px" }}>🎓 Öğrenci Girişi</h2>
+
+        <input type="text" placeholder="Kod" value={code} onChange={(e) => setCode(e.target.value)} required />
+        <input type="text" placeholder="Ad" value={name} onChange={(e) => setName(e.target.value)} required />
+        <input type="text" placeholder="Soyad" value={surname} onChange={(e) => setSurname(e.target.value)} required />
+        <input type="text" placeholder="Sınıf (örn: 5/A)" value={className} onChange={(e) => setClassName(e.target.value)} required />
+
         {error && <p style={{ color: "red" }}>{error}</p>}
-        <button
-          type="submit"
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "dodgerblue",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-          }}
-        >
+
+        <button type="submit" style={{ backgroundColor: "#007bff", color: "white", padding: "10px 20px", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
           🚀 Giriş Yap
         </button>
       </form>
