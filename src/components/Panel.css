@@ -1,0 +1,87 @@
+/* === Genel Panel Alanı === */
+.panel-container {
+  text-align: center;
+  min-height: 100vh;
+  padding: 30px;
+  background: linear-gradient(to bottom, #a8edea, #fed6e3);
+  font-family: "Comic Sans MS", Arial, sans-serif;
+}
+
+/* === Başlıklar === */
+.panel-container h1 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* === Öğrenci Kartı === */
+.student-card {
+  background: linear-gradient(135deg, #6dd5ed, #2193b0);
+  color: white;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 320px;
+  margin: 0 auto 30px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.student-card p {
+  margin: 8px 0;
+}
+
+/* === Egzersiz Kategori Başlıkları === */
+.exercise-title {
+  font-size: 22px;
+  font-weight: bold;
+  margin: 40px 0 20px;
+  color: #333;
+  text-align: center;
+}
+
+/* === Egzersiz Grid === */
+.exercise-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto 40px;
+}
+
+/* === Egzersiz Kartları === */
+.exercise-card {
+  background: white;
+  border-radius: 15px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.exercise-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #f6d365, #fda085);
+  color: white;
+}
+
+/* === Egzersiz İkonları === */
+.exercise-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+
+/* === Egzersiz Başlık + Açıklama === */
+.exercise-info h3 {
+  font-size: 18px;
+  margin: 0;
+  color: #333;
+}
+
+.exercise-info p {
+  font-size: 14px;
+  margin-top: 5px;
+  color: #666;
+  line-height: 1.4;
+}

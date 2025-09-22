@@ -1,8 +1,8 @@
-// src/components/Panel.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
+import "./Panel.css";
 
 export default function Panel() {
   const navigate = useNavigate();
@@ -15,110 +15,180 @@ export default function Panel() {
   useEffect(() => {
     const fetchStudent = async () => {
       if (!studentFromLogin) return;
+
       const ref = doc(db, "students", studentFromLogin.code);
       const snap = await getDoc(ref);
+
       if (snap.exists()) {
         setStudent(snap.data());
       }
     };
+
     fetchStudent();
   }, [studentFromLogin]);
 
   if (!student) {
-    return <p style={{ textAlign: "center", marginTop: "50px" }}>⏳ Yükleniyor...</p>;
+    return (
+      <p style={{ textAlign: "center", marginTop: "50px" }}>
+        ⏳ Yükleniyor...
+      </p>
+    );
   }
 
+  // Egzersiz listesi
+  const exercises = [
+    {
+      id: 1,
+      name: "Takistoskop",
+      icon: "🔤",
+      desc: "Kelimeleri hızlıca görüp tanıma çalışması",
+      path: "/takistoskop",
+    },
+    {
+      id: 2,
+      name: "Köşesel",
+      icon: "👀",
+      desc: "Aynı anda farklı köşelere odaklanma çalışması",
+      path: "/kosesel",
+    },
+    {
+      id: 3,
+      name: "Açılı",
+      icon: "📖",
+      desc: "Gözün farklı açılarda kelimeleri yakalaması",
+      path: "/acili",
+    },
+    {
+      id: 4,
+      name: "Çift Taraflı Odak",
+      icon: "🔁",
+      desc: "Yan yana çıkan kelimeleri takip et, aynıysa tıkla!",
+      path: "/cifttarafliodak",
+    },
+    {
+      id: 5,
+      name: "Harf Bulma Odak",
+      icon: "🔎",
+      desc: "Belirtilen harf/rakamı say ve cevapla!",
+      path: "/harfbulmaodakcalismasi",
+    },
+    {
+      id: 6,
+      name: "Odaklanma",
+      icon: "🎯",
+      desc: "Ortadaki noktaya odaklan, rakamlar değişsin!",
+      path: "/odaklanma",
+    },
+    {
+      id: 7,
+      name: "Hafıza Geliştirme",
+      icon: "🧠",
+      desc: "Kutuları hatırlayın ve doğru olanlara tıklayın. Hafızanızı güçlendirin.",
+      path: "/hafizagelistirmecalismasi",
+    },
+    {
+      id: 8,
+      name: "Göz Oyunu",
+      icon: "👁️",
+      desc: "Emoji dört yönde hareket eder, takip et!",
+      path: "/gozoyunu",
+    },
+    {
+      id: 9,
+      name: "Büyüyen Şekil",
+      icon: "📏",
+      desc: "Şekil büyüdükçe kenardaki harfleri yakala!",
+      path: "/buyuyensekil",
+    },
+    {
+      id: 10,
+      name: "Genişleyen Kutular",
+      icon: "🟥",
+      desc: "Kutular büyüyerek ayrılır, rakamları takip et!",
+      path: "/genisleyenkutular",
+    },
+    {
+      id: 11,
+      name: "Egzersiz 11",
+      icon: "🎵",
+      desc: "Hazırlanıyor...",
+      path: "/egzersiz11",
+    },
+    {
+      id: 12,
+      name: "Egzersiz 12",
+      icon: "📝",
+      desc: "Hazırlanıyor...",
+      path: "/egzersiz12",
+    },
+    {
+      id: 13,
+      name: "Egzersiz 13",
+      icon: "🎲",
+      desc: "Hazırlanıyor...",
+      path: "/egzersiz13",
+    },
+    {
+      id: 14,
+      name: "Egzersiz 14",
+      icon: "🔥",
+      desc: "Hazırlanıyor...",
+      path: "/egzersiz14",
+    },
+  ];
+
+  // 📌 Kategoriler
+  const categories = [
+    {
+      title: "👁️ Göz Algılama Çalışmaları",
+      items: [exercises[0], exercises[1], exercises[2]], // Takistoskop, Köşesel, Açılı
+    },
+    {
+      title: "🎯 Dikkat ve Konsantrasyon Çalışmaları",
+      items: [exercises[3], exercises[4], exercises[5], exercises[6]], // Çift Taraflı Odak, Harf Bulma, Odaklanma, Hafıza Geliştirme
+    },
+    {
+      title: "💪 Göz Kaslarını Geliştirme Çalışmaları",
+      items: [exercises[7], exercises[8], exercises[9]], // Göz Oyunu, Büyüyen Şekil, Genişleyen Kutular
+    },
+  ];
+
   return (
-    <div
-      style={{
-        textAlign: "center",
-        minHeight: "100vh",
-        background: "linear-gradient(to bottom, #a8edea, #fed6e3)",
-        fontFamily: "'Comic Sans MS', Arial, sans-serif",
-        padding: "30px",
-      }}
-    >
-      <h1 style={{ color: "#333", marginBottom: "10px" }}>
+    <div className="panel-container">
+      <h1>
         🎉 Hoş geldin {student.name} {student.surname}!
       </h1>
 
-      <div
-        style={{
-          backgroundColor: "white",
-          borderRadius: "15px",
-          padding: "20px",
-          maxWidth: "300px",
-          margin: "0 auto",
-          boxShadow: "0px 4px 10px rgba(0,0,0,0.2)",
-        }}
-      >
-        <p style={{ fontSize: "18px", margin: "5px" }}>
-          👤 Ad Soyad: <b>{student.name} {student.surname}</b>
-        </p>
-        <p style={{ fontSize: "18px", margin: "5px" }}>
-          📚 Sınıf: <b>{student.className}</b>
-        </p>
-        <p style={{ fontSize: "18px", margin: "5px" }}>
-          🆔 Kod: <b>{student.code}</b>
-        </p>
+      {/* Öğrenci Kartı */}
+      <div className="student-card">
+        <p>👤 {student.name} {student.surname}</p>
+        <p>📚 {student.className}</p>
+        <p>🆔 {student.code}</p>
       </div>
 
-      <h2 style={{ marginTop: "40px", marginBottom: "20px", color: "#444" }}>
-        🚀 Egzersizler
-      </h2>
+      {/* Egzersizler */}
+      <h2 className="exercise-title">🚀 Egzersizler</h2>
 
-      <div style={{ display: "flex", justifyContent: "center", gap: "20px", flexWrap: "wrap" }}>
-        <button
-          style={{
-            padding: "20px 30px",
-            fontSize: "18px",
-            borderRadius: "12px",
-            border: "none",
-            backgroundColor: "#4facfe",
-            color: "white",
-            cursor: "pointer",
-            fontWeight: "bold",
-            boxShadow: "0px 4px 8px rgba(0,0,0,0.2)",
-          }}
-          onClick={() => navigate("/takistoskop")}
-        >
-          🔤 Egzersiz 1 <br /> Takistoskop
-        </button>
-
-        <button
-          style={{
-            padding: "20px 30px",
-            fontSize: "18px",
-            borderRadius: "12px",
-            border: "none",
-            backgroundColor: "#43e97b",
-            color: "white",
-            cursor: "pointer",
-            fontWeight: "bold",
-            boxShadow: "0px 4px 8px rgba(0,0,0,0.2)",
-          }}
-          onClick={() => navigate("/kosesel")}
-        >
-          👀 Egzersiz 2 <br /> Köşesel
-        </button>
-
-        <button
-          style={{
-            padding: "20px 30px",
-            fontSize: "18px",
-            borderRadius: "12px",
-            border: "none",
-            backgroundColor: "#ff6a88",
-            color: "white",
-            cursor: "pointer",
-            fontWeight: "bold",
-            boxShadow: "0px 4px 8px rgba(0,0,0,0.2)",
-          }}
-          onClick={() => navigate("/acili")}
-        >
-          📖 Egzersiz 3 <br /> Açılı
-        </button>
-      </div>
+      {categories.map((cat, idx) => (
+        <div key={idx}>
+          <h3 className="exercise-title">{cat.title}</h3>
+          <div className="exercise-grid">
+            {cat.items.map((ex) => (
+              <div
+                key={ex.id}
+                className="exercise-card"
+                onClick={() => navigate(ex.path)}
+              >
+                <div className="exercise-icon">{ex.icon}</div>
+                <div className="exercise-info">
+                  <h3>{ex.id}. {ex.name}</h3>
+                  <p>{ex.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
