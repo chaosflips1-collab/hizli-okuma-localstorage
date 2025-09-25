@@ -1,0 +1,98 @@
+.hafiza-container {
+  text-align: center;
+  padding: 20px;
+  font-family: "Comic Sans MS", cursive;
+}
+
+.buttons {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.start-btn,
+.exit-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.start-btn {
+  background: #4caf50;
+}
+.start-btn:hover {
+  background: #45a049;
+}
+
+.exit-btn {
+  background: #f44336;
+}
+.exit-btn:hover {
+  background: #d32f2f;
+}
+
+/* Grid */
+.grid {
+  display: grid;
+  gap: 8px;
+  justify-content: center;
+  margin: 20px auto;
+  width: fit-content;
+}
+
+.box {
+  width: 60px;
+  height: 60px;
+  background: #eee;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.box.highlight {
+  background: yellow;
+}
+
+.box.correct {
+  background: green;
+  color: white;
+}
+
+.box.wrong {
+  background: red;
+  color: white;
+}
+
+/* Skor Tablosu */
+.score-board {
+  margin-top: 20px;
+  background: #fff3cd;
+  display: inline-block;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #f0ad4e;
+  text-align: left;
+}
+
+/* 📱 Mobil uyum */
+@media (max-width: 700px) {
+  .box {
+    width: 40px;
+    height: 40px;
+  }
+  .start-btn,
+  .exit-btn {
+    font-size: 14px;
+    padding: 8px 15px;
+  }
+  .score-board {
+    width: 90%;
+    font-size: 14px;
+  }
+}

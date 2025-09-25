@@ -1,6 +1,7 @@
-// src/components/Takistoskop.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import library from "../data/library.json";
+import "./Takistoskop.css"; // ✅ CSS dosyasını bağla
 
 export default function Takistoskop() {
   const navigate = useNavigate();
@@ -27,10 +28,11 @@ export default function Takistoskop() {
   const [time, setTime] = useState(0);
   const [running, setRunning] = useState(false);
 
-  // Materyal listeleri
-  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-  const numbers = Array.from({ length: 10 }, (_, i) => i.toString());
-  const words = ["masa", "kitap", "araba", "çocuk", "okul", "kalem"];
+  const studentClass = localStorage.getItem("studentClass") || "6";
+
+  const letters = library.letters || [];
+  const numbers = library.numbers || [];
+  const words = library.takistoskop?.[studentClass] || [];
 
   const getRandomItem = () => {
     if (material === "harf") {
@@ -49,9 +51,7 @@ export default function Takistoskop() {
     setCurrentItem(item);
     setShowItem(true);
 
-    setTimeout(() => {
-      setShowItem(false);
-    }, speed);
+    setTimeout(() => setShowItem(false), speed);
   };
 
   const checkAnswer = () => {
@@ -64,24 +64,19 @@ export default function Takistoskop() {
       setCorrect(correct + 1);
       setScore(score + 10);
       if (score + 10 > record) setRecord(score + 10);
-      if ((correct + 1) % 3 === 0 && level < 10) {
-        setLevel(level + 1);
-      }
+      if ((correct + 1) % 3 === 0 && level < 10) setLevel(level + 1);
     } else {
       setWrong(wrong + 1);
     }
-    setAnswer("");
 
+    setAnswer("");
     const newItem = getRandomItem();
     setCurrentItem(newItem);
     setShowItem(true);
 
-    setTimeout(() => {
-      setShowItem(false);
-    }, speed);
+    setTimeout(() => setShowItem(false), speed);
   };
 
-  // Zaman sayacı
   useEffect(() => {
     let interval;
     if (running) {
@@ -96,7 +91,7 @@ export default function Takistoskop() {
             clearInterval(interval);
             setRunning(false);
             alert("Bugünkü Takistoskop egzersizi sona erdi!");
-            navigate("/kosesel");
+            navigate("/panel", { replace: true }); // ✅ garanti dönüş
             return prev;
           }
           return newTime;
@@ -111,67 +106,39 @@ export default function Takistoskop() {
     setCurrentItem("");
     setAnswer("");
     alert("Egzersizden çıkış yapıldı.");
-    navigate("/panel");
+    navigate("/panel", { replace: true }); // ✅ garanti dönüş
   };
 
   return (
-    <div style={{ textAlign: "center", margin: "20px", fontFamily: "Comic Sans MS" }}>
-      <h2 style={{ color: "#ff6600", textShadow: "2px 2px #ffd966" }}>🎯 Takistoskop Çalışması 🎯</h2>
+    <div className="takistoskop-container">
+      <h2 className="takistoskop-title">🎯 Takistoskop Çalışması 🎯</h2>
 
       {/* Üst Alan */}
-      <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
-        {/* Gösterim Alanı + Yanıt */}
-        <div
-          style={{
-            width: "500px",
-            border: "4px solid #4CAF50",
-            borderRadius: "15px",
-            backgroundColor: "#f9f9f9",
-            boxShadow: "4px 4px 12px rgba(0,0,0,0.2)",
-          }}
-        >
+      <div className="top-section">
+        {/* Gösterim Alanı */}
+        <div className="display-box">
           <div
+            className="display-item"
             style={{
-              height: "150px",
               backgroundColor: bgColor,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               fontFamily: font,
               fontSize: `${fontSize}px`,
-              borderBottom: "2px dashed #4CAF50",
-              fontWeight: "bold",
-              color: "#333",
             }}
           >
             {showItem ? currentItem : ""}
           </div>
-          <div style={{ padding: "15px" }}>
-            <p style={{ fontWeight: "bold" }}>Yanıtınız?</p>
+          <div className="answer-section">
+            <p>Yanıtınız?</p>
             <input
               type="text"
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
-              style={{
-                padding: "10px",
-                fontSize: "18px",
-                borderRadius: "10px",
-                border: "2px solid #4CAF50",
-              }}
+              className="answer-input"
               disabled={!running}
             />
             <button
               onClick={checkAnswer}
-              style={{
-                marginLeft: "10px",
-                padding: "10px 20px",
-                borderRadius: "10px",
-                backgroundColor: "#4CAF50",
-                color: "white",
-                border: "none",
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
+              className="answer-btn"
               disabled={!running}
             >
               ✅ Tamam
@@ -180,18 +147,8 @@ export default function Takistoskop() {
         </div>
 
         {/* Başarı Tablosu */}
-        <div
-          style={{
-            width: "220px",
-            border: "3px solid #ff9800",
-            borderRadius: "15px",
-            padding: "15px",
-            textAlign: "left",
-            backgroundColor: "#fff8e1",
-            boxShadow: "4px 4px 12px rgba(0,0,0,0.2)",
-          }}
-        >
-          <h4 style={{ color: "#ff9800" }}>🏆 Başarı Tablosu</h4>
+        <div className="score-board">
+          <h4>🏆 Başarı Tablosu</h4>
           <p>✔ Doğru: {correct}</p>
           <p>❌ Yanlış: {wrong}</p>
           <p>⭐ Skor: {score}</p>
@@ -202,31 +159,18 @@ export default function Takistoskop() {
       </div>
 
       {/* İstatistik Tablosu */}
-      <div style={{ marginTop: "20px" }}>
-        <h3 style={{ color: "#2196F3" }}>📊 İstatistik Tablosu</h3>
-        <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
+      <div className="stats-section">
+        <h3 className="stats-title">📊 İstatistik Tablosu</h3>
+        <div className="levels">
           {Array.from({ length: 10 }, (_, i) => {
             const lvl = i + 1;
             return (
               <div
                 key={lvl}
+                className="level-circle"
                 style={{
-                  width: "35px",
-                  height: "35px",
-                  borderRadius: "50%",
-                  border: "2px solid #2196F3",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
                   backgroundColor:
-                    level > lvl
-                      ? "#4CAF50"
-                      : level === lvl
-                      ? "#ffeb3b"
-                      : "white",
-                  fontSize: "14px",
-                  fontWeight: "bold",
-                  color: "#333",
+                    level > lvl ? "#4CAF50" : level === lvl ? "#ffeb3b" : "white",
                 }}
               >
                 {lvl}
@@ -237,109 +181,79 @@ export default function Takistoskop() {
       </div>
 
       {/* Ayarlar */}
-      <div
-        style={{
-          marginTop: "20px",
-          border: "3px dashed #9c27b0",
-          borderRadius: "15px",
-          padding: "20px",
-          width: "500px",
-          marginLeft: "auto",
-          marginRight: "auto",
-          backgroundColor: "#f3e5f5",
-          boxShadow: "4px 4px 12px rgba(0,0,0,0.2)",
-        }}
-      >
-        <h4 style={{ color: "#9c27b0" }}>⚙️ Ayarlar Menüsü</h4>
-        <div style={{ margin: "10px 0" }}>
-          <label>Materyal: </label>
-          <select value={material} onChange={(e) => setMaterial(e.target.value)} disabled={running}>
-            <option value="harf">Harf</option>
-            <option value="kelime">Kelime</option>
-            <option value="rakam">Rakam</option>
-          </select>
-        </div>
-        <div style={{ margin: "10px 0" }}>
-          <label>Çalışma Şekli: </label>
-          <select value={mode} onChange={(e) => setMode(e.target.value)} disabled={running}>
-            <option value="otomatik">Otomatik</option>
-            <option value="manuel">Manuel</option>
-            <option value="rastgele">Rastgele</option>
-          </select>
-        </div>
-        <div style={{ margin: "10px 0" }}>
-          <label>Hız (ms): </label>
-          <input
-            type="range"
-            min="200"
-            max="2000"
-            step="100"
-            value={speed}
-            onChange={(e) => setSpeed(Number(e.target.value))}
-            disabled={running}
-          />
-          <span> {speed} ms</span>
-        </div>
-        <div style={{ margin: "10px 0" }}>
-          <label>Zemin Renk: </label>
-          <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} disabled={running} />
-        </div>
-        <div style={{ margin: "10px 0" }}>
-          <label>Font: </label>
-          <select value={font} onChange={(e) => setFont(e.target.value)} disabled={running}>
-            <option value="Arial">Arial</option>
-            <option value="Verdana">Verdana</option>
-            <option value="Courier New">Courier New</option>
-            <option value="Times New Roman">Times New Roman</option>
-          </select>
-        </div>
-        <div style={{ margin: "10px 0" }}>
-          <label>Font Boyutu: </label>
-          <input
-            type="number"
-            value={fontSize}
-            onChange={(e) => setFontSize(Number(e.target.value))}
-            min="16"
-            max="72"
-            disabled={running}
-          />
-        </div>
+      <div className="settings-box">
+        <h4>⚙️ Ayarlar Menüsü</h4>
+        <label>Materyal:</label>
+        <select
+          value={material}
+          onChange={(e) => setMaterial(e.target.value)}
+          disabled={running}
+        >
+          <option value="harf">Harf</option>
+          <option value="kelime">Kelime</option>
+          <option value="rakam">Rakam</option>
+        </select>
+
+        <label>Çalışma Şekli:</label>
+        <select
+          value={mode}
+          onChange={(e) => setMode(e.target.value)}
+          disabled={running}
+        >
+          <option value="otomatik">Otomatik</option>
+          <option value="manuel">Manuel</option>
+          <option value="rastgele">Rastgele</option>
+        </select>
+
+        <label>Hız (ms):</label>
+        <input
+          type="range"
+          min="200"
+          max="2000"
+          step="100"
+          value={speed}
+          onChange={(e) => setSpeed(Number(e.target.value))}
+          disabled={running}
+        />
+        <span>{speed} ms</span>
+
+        <label>Zemin Renk:</label>
+        <input
+          type="color"
+          value={bgColor}
+          onChange={(e) => setBgColor(e.target.value)}
+          disabled={running}
+        />
+
+        <label>Font:</label>
+        <select
+          value={font}
+          onChange={(e) => setFont(e.target.value)}
+          disabled={running}
+        >
+          <option value="Arial">Arial</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Times New Roman">Times New Roman</option>
+        </select>
+
+        <label>Font Boyutu:</label>
+        <input
+          type="number"
+          value={fontSize}
+          onChange={(e) => setFontSize(Number(e.target.value))}
+          min="16"
+          max="72"
+          disabled={running}
+        />
       </div>
 
       {/* Butonlar */}
-      <div style={{ marginTop: "20px" }}>
-        <button
-          style={{
-            padding: "15px 40px",
-            fontSize: "20px",
-            fontWeight: "bold",
-            backgroundColor: "#4CAF50",
-            color: "white",
-            border: "none",
-            borderRadius: "12px",
-            marginRight: "10px",
-            cursor: "pointer",
-            boxShadow: "3px 3px 8px rgba(0,0,0,0.2)",
-          }}
-          onClick={startExercise}
-          disabled={running}
-        >
+      <div className="button-row">
+        <button onClick={startExercise} className="start-btn" disabled={running}>
           ✔ Başla
         </button>
-        <button
-          style={{
-            padding: "15px 40px",
-            fontSize: "20px",
-            fontWeight: "bold",
-            backgroundColor: "#f44336",
-            color: "white",
-            border: "none",
-            borderRadius: "12px",
-            cursor: "pointer",
-            boxShadow: "3px 3px 8px rgba(0,0,0,0.2)",
-          }}
-          onClick={exitExercise}
-        >
+        <button onClick={exitExercise} className="exit-btn">
           ❌ Çıkış
         </button>
       </div>

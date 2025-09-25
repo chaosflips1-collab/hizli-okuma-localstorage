@@ -1,6 +1,8 @@
 // src/components/Acili.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import library from "../data/library.json";
+import "./Acili.css"; // ✅ CSS eklendi
 
 export default function Acili() {
   const navigate = useNavigate();
@@ -16,7 +18,7 @@ export default function Acili() {
 
   const [speed, setSpeed] = useState(1000);
 
-  const pool = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ".split("");
+  const pool = library.letters || [];
 
   const generateLetters = () => {
     let arr = [];
@@ -92,36 +94,16 @@ export default function Acili() {
   };
 
   return (
-    <div style={{ textAlign: "center", margin: "20px", fontFamily: "Comic Sans MS" }}>
-      <h2 style={{ color: "#e91e63", textShadow: "2px 2px #f8bbd0" }}>
-        📐 Açılı Okuma Egzersizi
-      </h2>
+    <div className="acili-container">
+      <h2 className="acili-title">📐 Açılı Okuma Egzersizi</h2>
 
       {/* Harf Alanı */}
-      <div
-        style={{
-          width: "650px",
-          height: "300px",
-          margin: "0 auto",
-          border: "4px solid #e91e63",
-          borderRadius: "15px",
-          backgroundColor: bgColor,
-          position: "relative",
-          overflow: "hidden",
-          boxShadow: "4px 4px 12px rgba(0,0,0,0.2)",
-        }}
-      >
+      <div className="letter-area" style={{ backgroundColor: bgColor }}>
         {letters.map((ltr, idx) => (
           <span
             key={idx}
-            style={{
-              position: "absolute",
-              fontFamily: font,
-              fontSize: `${fontSize}px`,
-              fontWeight: "bold",
-              color: "#333",
-              ...getLetterStyle(idx),
-            }}
+            className="letter"
+            style={{ fontFamily: font, fontSize: `${fontSize}px`, ...getLetterStyle(idx) }}
           >
             {ltr}
           </span>
@@ -129,48 +111,24 @@ export default function Acili() {
       </div>
 
       {/* Başarı Tablosu */}
-      <div
-        style={{
-          width: "260px",
-          border: "3px solid #ff5722",
-          borderRadius: "15px",
-          padding: "15px",
-          margin: "20px auto",
-          backgroundColor: "#fff3e0",
-          textAlign: "left",
-          boxShadow: "4px 4px 12px rgba(0,0,0,0.2)",
-        }}
-      >
-        <h4 style={{ color: "#ff5722" }}>📊 Başarı Tablosu</h4>
+      <div className="success-box">
+        <h4>📊 Başarı Tablosu</h4>
         <p>⏳ Kalan Süre: {180 - time} sn</p>
         <p>⚡ Hız: {speed} ms</p>
       </div>
 
       {/* İstatistik Tablosu */}
-      <div style={{ marginTop: "20px" }}>
-        <h3 style={{ color: "#9c27b0" }}>📈 İstatistik Tablosu</h3>
-        <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
+      <div className="stats">
+        <h3>📈 İstatistik Tablosu</h3>
+        <div className="levels">
           {Array.from({ length: 10 }, (_, i) => {
             const lvl = i + 1;
             return (
               <div
                 key={lvl}
-                style={{
-                  width: "35px",
-                  height: "35px",
-                  border: "2px solid #9c27b0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "8px",
-                  backgroundColor:
-                    time / 18 >= lvl
-                      ? "#4caf50"
-                      : time / 18 + 1 === lvl
-                      ? "#ffeb3b"
-                      : "white",
-                  fontWeight: "bold",
-                }}
+                className={`level ${
+                  time / 18 >= lvl ? "done" : time / 18 + 1 === lvl ? "current" : ""
+                }`}
               >
                 {lvl}
               </div>
@@ -180,21 +138,9 @@ export default function Acili() {
       </div>
 
       {/* Ayarlar */}
-      <div
-        style={{
-          marginTop: "20px",
-          border: "3px dashed #3f51b5",
-          borderRadius: "15px",
-          padding: "20px",
-          width: "500px",
-          marginLeft: "auto",
-          marginRight: "auto",
-          backgroundColor: "#e8eaf6",
-          boxShadow: "4px 4px 12px rgba(0,0,0,0.2)",
-        }}
-      >
-        <h4 style={{ color: "#3f51b5" }}>⚙️ Ayarlar Menüsü</h4>
-        <div style={{ margin: "10px 0" }}>
+      <div className="settings-box">
+        <h4>⚙️ Ayarlar Menüsü</h4>
+        <div>
           <label>Zemin Renk: </label>
           <input
             type="color"
@@ -203,7 +149,7 @@ export default function Acili() {
             disabled={running}
           />
         </div>
-        <div style={{ margin: "10px 0" }}>
+        <div>
           <label>Font: </label>
           <select value={font} onChange={(e) => setFont(e.target.value)} disabled={running}>
             <option value="Arial">Arial</option>
@@ -212,7 +158,7 @@ export default function Acili() {
             <option value="Times New Roman">Times New Roman</option>
           </select>
         </div>
-        <div style={{ margin: "10px 0" }}>
+        <div>
           <label>Font Boyutu: </label>
           <input
             type="number"
@@ -226,39 +172,11 @@ export default function Acili() {
       </div>
 
       {/* Butonlar */}
-      <div style={{ marginTop: "20px" }}>
-        <button
-          style={{
-            padding: "15px 40px",
-            fontSize: "20px",
-            fontWeight: "bold",
-            backgroundColor: "#4CAF50",
-            color: "white",
-            border: "none",
-            borderRadius: "12px",
-            marginRight: "10px",
-            cursor: "pointer",
-            boxShadow: "3px 3px 8px rgba(0,0,0,0.2)",
-          }}
-          onClick={startExercise}
-          disabled={running}
-        >
+      <div className="buttons">
+        <button className="start-btn" onClick={startExercise} disabled={running}>
           ✔ Başla
         </button>
-        <button
-          style={{
-            padding: "15px 40px",
-            fontSize: "20px",
-            fontWeight: "bold",
-            backgroundColor: "#f44336",
-            color: "white",
-            border: "none",
-            borderRadius: "12px",
-            cursor: "pointer",
-            boxShadow: "3px 3px 8px rgba(0,0,0,0.2)",
-          }}
-          onClick={exitExercise}
-        >
+        <button className="exit-btn" onClick={exitExercise}>
           ❌ Çıkış
         </button>
       </div>

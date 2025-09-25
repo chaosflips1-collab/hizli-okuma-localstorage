@@ -1,0 +1,105 @@
+.harf-odak-container {
+  text-align: center;
+  padding: 20px;
+  font-family: "Comic Sans MS", cursive;
+}
+
+.display-area {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  min-height: 150px;
+  border: 2px dashed green;
+  border-radius: 10px;
+  margin: 20px auto;
+  width: 80%;
+  font-size: 40px;
+  padding: 20px;
+}
+
+.display-item {
+  margin: 20px;
+  font-weight: bold;
+}
+
+.question {
+  font-size: 20px;
+  margin-top: 20px;
+}
+
+.answer-box {
+  margin-bottom: 20px;
+}
+.answer-box input {
+  padding: 10px;
+  font-size: 18px;
+  width: 120px;
+}
+.answer-box button {
+  padding: 10px 20px;
+  margin-left: 10px;
+  font-size: 18px;
+  background-color: green;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.buttons {
+  margin: 15px 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.start-btn,
+.exit-btn {
+  padding: 10px 20px;
+  font-size: 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+  border: none;
+  font-weight: bold;
+}
+.start-btn {
+  background-color: dodgerblue;
+}
+.exit-btn {
+  background-color: crimson;
+}
+
+.score-board {
+  margin-top: 30px;
+  border: 2px solid orange;
+  display: inline-block;
+  padding: 15px;
+  border-radius: 10px;
+  background-color: #fffbe6;
+  text-align: left;
+}
+
+/* 📱 Mobil uyum */
+@media (max-width: 700px) {
+  .display-area {
+    font-size: 28px;
+    padding: 10px;
+  }
+  .answer-box input {
+    width: 80px;
+    font-size: 16px;
+  }
+  .answer-box button {
+    font-size: 16px;
+    padding: 8px 15px;
+  }
+  .start-btn,
+  .exit-btn {
+    font-size: 14px;
+    padding: 8px 15px;
+  }
+  .score-board {
+    width: 90%;
+    font-size: 14px;
+  }
+}

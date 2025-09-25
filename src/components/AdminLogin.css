@@ -1,0 +1,87 @@
+.admin-login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(to right, #fceabb, #f8b500);
+  font-family: "Comic Sans MS", "Baloo 2", cursive;
+  padding: 15px;
+}
+
+.admin-login-card {
+  background: #fff;
+  padding: 30px 40px;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  text-align: center;
+  width: 100%;
+  max-width: 350px;
+  animation: fadeIn 0.6s ease;
+}
+
+.admin-login-card h2 {
+  margin-bottom: 20px;
+  font-size: 22px;
+  color: #333;
+}
+
+.admin-login-card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  border: 2px solid #ddd;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.admin-login-card input:focus {
+  border-color: #f8b500;
+  outline: none;
+  box-shadow: 0 0 8px rgba(248, 181, 0, 0.5);
+}
+
+.admin-login-card button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.3s;
+}
+
+.admin-login-card button:hover {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, #f6d365, #fda085);
+}
+
+.error {
+  color: red;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+/* 📱 Mobil uyum */
+@media (max-width: 480px) {
+  .admin-login-card {
+    padding: 20px;
+    border-radius: 15px;
+  }
+
+  .admin-login-card h2 {
+    font-size: 20px;
+  }
+
+  .admin-login-card button {
+    font-size: 15px;
+  }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}

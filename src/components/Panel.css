@@ -1,87 +1,152 @@
-/* === Genel Panel Alanı === */
+/* Panel genel */
 .panel-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: "Comic Sans MS", sans-serif;
   text-align: center;
-  min-height: 100vh;
-  padding: 30px;
-  background: linear-gradient(to bottom, #a8edea, #fed6e3);
-  font-family: "Comic Sans MS", Arial, sans-serif;
 }
 
-/* === Başlıklar === */
+/* Başlık */
 .panel-container h1 {
   color: #333;
+  font-size: 28px;
   margin-bottom: 20px;
 }
 
-/* === Öğrenci Kartı === */
+/* Öğrenci kartı */
 .student-card {
-  background: linear-gradient(135deg, #6dd5ed, #2193b0);
-  color: white;
+  background: #f5f5f5;
+  border: 2px solid #4caf50;
   border-radius: 12px;
-  padding: 20px;
-  max-width: 320px;
-  margin: 0 auto 30px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  font-size: 16px;
-  line-height: 1.6;
+  padding: 15px;
+  margin: 15px auto;
+  width: 90%;
+  max-width: 400px;
+  text-align: left;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
 }
 
 .student-card p {
-  margin: 8px 0;
+  margin: 6px 0;
+  font-size: 16px;
 }
 
-/* === Egzersiz Kategori Başlıkları === */
+/* Çıkış butonu */
+.logout-btn {
+  background: #f44336;
+  color: white;
+  font-size: 18px;
+  padding: 10px 25px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 10px 0 25px 0;
+  transition: 0.2s;
+}
+.logout-btn:hover {
+  background: #d32f2f;
+}
+
+/* Kategori başlıkları */
 .exercise-title {
+  margin: 15px 0 10px 0;
   font-size: 22px;
-  font-weight: bold;
-  margin: 40px 0 20px;
-  color: #333;
-  text-align: center;
+  color: #2196f3;
 }
 
-/* === Egzersiz Grid === */
+/* Egzersiz kartları */
 .exercise-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-  max-width: 1000px;
-  margin: 0 auto 40px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
 }
 
-/* === Egzersiz Kartları === */
 .exercise-card {
   background: white;
-  border-radius: 15px;
-  padding: 20px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  padding: 15px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
-
 .exercise-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.2);
-  background: linear-gradient(135deg, #f6d365, #fda085);
-  color: white;
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
-/* === Egzersiz İkonları === */
+/* Kart içi */
 .exercise-icon {
-  font-size: 36px;
-  margin-bottom: 12px;
+  font-size: 40px;
+  margin-bottom: 10px;
 }
-
-/* === Egzersiz Başlık + Açıklama === */
 .exercise-info h3 {
   font-size: 18px;
-  margin: 0;
-  color: #333;
+  margin-bottom: 6px;
 }
-
 .exercise-info p {
   font-size: 14px;
-  margin-top: 5px;
-  color: #666;
-  line-height: 1.4;
+  color: #555;
+}
+
+/* 📱 Mobil uyum */
+@media (max-width: 768px) {
+  .panel-container {
+    padding: 10px;
+  }
+
+  .student-card {
+    width: 100%;
+    font-size: 14px;
+  }
+
+  .exercise-title {
+    font-size: 18px;
+  }
+
+  .exercise-grid {
+    grid-template-columns: 1fr; /* Tek sütun */
+  }
+
+  .exercise-card {
+    padding: 12px;
+  }
+
+  .exercise-icon {
+    font-size: 32px;
+  }
+
+  .exercise-info h3 {
+    font-size: 16px;
+  }
+}
+/* Accordion başlık */
+.accordion {
+  margin-bottom: 15px;
+  border: 2px solid #2196f3;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #e3f2fd;
+  padding: 12px 15px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  color: #1976d2;
+}
+
+.accordion-header:hover {
+  background: #bbdefb;
+}
+
+.accordion-header span {
+  font-size: 20px;
+  color: #1976d2;
 }

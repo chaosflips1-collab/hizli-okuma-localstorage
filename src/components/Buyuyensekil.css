@@ -1,0 +1,129 @@
+.buyuyen-container {
+  text-align: center;
+  margin: 20px auto;
+  font-family: "Comic Sans MS", cursive;
+  max-width: 600px;
+}
+
+.buyuyen-container h2 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.controls {
+  margin: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.controls input {
+  padding: 6px 10px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 100px;
+}
+
+.controls button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.controls button:hover {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, #f6d365, #fda085);
+}
+
+.shape {
+  position: relative;
+  margin: 40px auto;
+  background: peru;
+  border-radius: 20px;
+  transition: width 0.3s, height 0.3s;
+}
+
+.center-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: red;
+  border-radius: 50%;
+}
+
+.letter {
+  position: absolute;
+  font-weight: bold;
+  font-size: 28px;
+}
+
+.letter.top {
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.letter.bottom {
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.letter.left {
+  top: 50%;
+  left: -30px;
+  transform: translateY(-50%);
+}
+.letter.right {
+  top: 50%;
+  right: -30px;
+  transform: translateY(-50%);
+}
+
+/* 📱 Mobil uyum */
+@media (max-width: 768px) {
+  .shape {
+    margin: 20px auto;
+  }
+
+  .letter {
+    font-size: 22px;
+  }
+
+  .controls {
+    flex-direction: column;
+  }
+
+  .controls input {
+    width: 80px;
+    font-size: 12px;
+  }
+
+  .controls button {
+    width: 100%;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .letter {
+    font-size: 18px;
+  }
+
+  .controls input {
+    width: 70px;
+    font-size: 11px;
+  }
+
+  .controls button {
+    padding: 6px 12px;
+  }
+}

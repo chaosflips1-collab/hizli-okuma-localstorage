@@ -1,7 +1,10 @@
+// src/components/Cifttarafliodak.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import library from "../data/library.json";
+import "./Cifttarafliodak.css"; // ✅ CSS eklendi
 
-export default function Cıfttaraflıodak() {
+export default function Cifttarafliodak() {
   const navigate = useNavigate();
 
   const [running, setRunning] = useState(false);
@@ -11,21 +14,19 @@ export default function Cıfttaraflıodak() {
   const [message, setMessage] = useState("");
   const [timer, setTimer] = useState(3);
 
-  const pool = [
-    "kitap", "kalem", "masa", "sandalye", "bilgisayar", "telefon", "defter",
-    "okul", "öğrenci", "öğretmen", "bahçe", "şehir", "araba", "ev", "hayvan",
-    "oyun", "su", "yemek", "pencere", "kapı"
-  ];
+  const studentClass = localStorage.getItem("studentClass") || "6";
 
-  // ✅ Yeni kelimeler üret
+  const pool =
+    (library.ciftTarafliOdak && library.ciftTarafliOdak[studentClass]) || [];
+
   const generateWords = () => {
+    if (pool.length === 0) return;
     const w1 = pool[Math.floor(Math.random() * pool.length)];
-    const same = Math.random() < 0.4; // %40 ihtimalle aynı çıkar
+    const same = Math.random() < 0.4;
     const w2 = same ? w1 : pool[Math.floor(Math.random() * pool.length)];
     setWords([w1, w2]);
   };
 
-  // ✅ Başlat
   const startExercise = () => {
     setRunning(true);
     setScore(0);
@@ -35,7 +36,6 @@ export default function Cıfttaraflıodak() {
     generateWords();
   };
 
-  // ✅ Sonraki tur
   useEffect(() => {
     if (!running) return;
     if (round >= 20) {
@@ -58,7 +58,6 @@ export default function Cıfttaraflıodak() {
     return () => clearInterval(countdown);
   }, [running, round, score]);
 
-  // ✅ Kullanıcı butona bastığında kontrol et
   const handleAnswer = () => {
     if (words[0] === words[1]) {
       setScore((s) => s + 1);
@@ -77,116 +76,44 @@ export default function Cıfttaraflıodak() {
   };
 
   return (
-    <div
-      style={{
-        textAlign: "center",
-        minHeight: "100vh",
-        background: "linear-gradient(to bottom, #fceabb, #f8b500)",
-        fontFamily: "Comic Sans MS",
-        padding: "30px",
-      }}
-    >
+    <div className="cift-container">
       <h2>🔁 Çift Taraflı Odak Egzersizi</h2>
 
       {!running ? (
-        <div>
-          <button
-            onClick={startExercise}
-            style={{
-              padding: "15px 40px",
-              fontSize: "20px",
-              fontWeight: "bold",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "12px",
-              cursor: "pointer",
-              marginRight: "10px",
-            }}
-          >
+        <div className="menu">
+          <button className="start-btn" onClick={startExercise} disabled={pool.length === 0}>
             ▶ Başlat
           </button>
-          <button
-            onClick={exitExercise}
-            style={{
-              padding: "15px 40px",
-              fontSize: "20px",
-              fontWeight: "bold",
-              backgroundColor: "#f44336",
-              color: "white",
-              border: "none",
-              borderRadius: "12px",
-              cursor: "pointer",
-            }}
-          >
+          <button className="exit-btn" onClick={exitExercise}>
             ❌ Çıkış
           </button>
+          {pool.length === 0 && (
+            <p className="warning">⚠ Bu sınıf için henüz kelime eklenmedi.</p>
+          )}
         </div>
       ) : (
-        <div>
-          {/* Kelimeler */}
-          <div style={{ display: "flex", justifyContent: "center", gap: "50px", marginTop: "40px" }}>
-            <div
-              style={{
-                width: "200px",
-                height: "100px",
-                backgroundColor: "white",
-                border: "3px solid #333",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "28px",
-                fontWeight: "bold",
-                borderRadius: "12px",
-              }}
-            >
-              {words[0]}
-            </div>
-            <div
-              style={{
-                width: "200px",
-                height: "100px",
-                backgroundColor: "white",
-                border: "3px solid #333",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "28px",
-                fontWeight: "bold",
-                borderRadius: "12px",
-              }}
-            >
-              {words[1]}
-            </div>
+        <div className="game">
+          <div className="word-boxes">
+            <div className="word-box">{words[0]}</div>
+            <div className="word-box">{words[1]}</div>
           </div>
 
-          {/* Sayaç ve Puan */}
-          <div style={{ marginTop: "20px" }}>
+          <div className="stats">
             <p>⏳ Kalan Süre: {timer} sn</p>
             <p>🏅 Puan: {score}</p>
             <p>🔄 Tur: {round}/20</p>
           </div>
 
-          {/* Buton */}
-          <button
-            onClick={handleAnswer}
-            style={{
-              marginTop: "20px",
-              padding: "15px 30px",
-              fontSize: "20px",
-              fontWeight: "bold",
-              backgroundColor: "#2196F3",
-              color: "white",
-              border: "none",
-              borderRadius: "12px",
-              cursor: "pointer",
-            }}
-          >
+          <button className="answer-btn" onClick={handleAnswer}>
             ✅ Aynıysa Tıkla
           </button>
 
-          {/* Mesaj */}
-          {message && <p style={{ marginTop: "15px", fontSize: "18px" }}>{message}</p>}
+          {message && <p className="message">{message}</p>}
+
+          {/* 🆕 Oyun esnasında da çıkış butonu */}
+          <button className="exit-btn" onClick={exitExercise} style={{ marginTop: "15px" }}>
+            ❌ Çıkış
+          </button>
         </div>
       )}
     </div>

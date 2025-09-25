@@ -1,18 +1,22 @@
+// src/components/Buyuyensekil.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import library from "../data/library.json";
+import "./Buyuyensekil.css";
 
 export default function Buyuyensekil() {
+  const navigate = useNavigate();
+
   const [running, setRunning] = useState(false);
   const [letters, setLetters] = useState(["a", "b", "c", "d"]);
   const [size, setSize] = useState(100);
   const [intervalMs, setIntervalMs] = useState(1000);
 
-  // 🔤 Rastgele harf üretici
   const randomLetter = () => {
-    const alphabet = "abcçdefgğhıijklmnoöprsştuüvyz";
-    return alphabet[Math.floor(Math.random() * alphabet.length)];
+    const pool = library.letters || [];
+    return pool[Math.floor(Math.random() * pool.length)];
   };
 
-  // 🔄 Her adımda harf değişsin
   const newLetters = () => [
     randomLetter(),
     randomLetter(),
@@ -38,100 +42,42 @@ export default function Buyuyensekil() {
     return () => clearInterval(interval);
   }, [running, intervalMs]);
 
+  const handleExit = () => {
+    setRunning(false);
+    setLetters([]);
+    navigate("/panel");
+  };
+
   return (
-    <div style={{ textAlign: "center", marginTop: "20px" }}>
+    <div className="buyuyen-container">
       <h2>📏 Büyüyen Şekil Egzersizi</h2>
 
-      <div style={{ margin: "10px" }}>
+      <div className="controls">
         <label>Hız (ms): </label>
         <input
           type="number"
           value={intervalMs}
           onChange={(e) => setIntervalMs(Number(e.target.value))}
-          style={{ marginRight: "10px" }}
         />
         <button onClick={() => setRunning(!running)}>
-          {running ? "Durdur" : "Başlat"}
+          {running ? "⏸ Durdur" : "▶ Başlat"}
+        </button>
+        <button className="exit-btn" onClick={handleExit}>
+          ❌ Çıkış
         </button>
       </div>
 
       {/* Şekil */}
       <div
-        style={{
-          position: "relative",
-          width: `${size}px`,
-          height: `${size / 2}px`,
-          margin: "50px auto",
-          background: "peru",
-          borderRadius: "20px",
-        }}
+        className="shape"
+        style={{ width: `${size}px`, height: `${size / 2}px` }}
       >
-        {/* Ortadaki kırmızı nokta */}
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "8px",
-            height: "8px",
-            background: "red",
-            borderRadius: "50%",
-          }}
-        ></div>
+        <div className="center-dot"></div>
 
-        {/* Harfler - büyütüldü */}
-        <div
-          style={{
-            position: "absolute",
-            top: "-30px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            fontWeight: "bold",
-            fontSize: "28px",
-          }}
-        >
-          {letters[0]}
-        </div>
-
-        <div
-          style={{
-            position: "absolute",
-            bottom: "-30px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            fontWeight: "bold",
-            fontSize: "28px",
-          }}
-        >
-          {letters[1]}
-        </div>
-
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "-30px",
-            transform: "translateY(-50%)",
-            fontWeight: "bold",
-            fontSize: "28px",
-          }}
-        >
-          {letters[2]}
-        </div>
-
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            right: "-30px",
-            transform: "translateY(-50%)",
-            fontWeight: "bold",
-            fontSize: "28px",
-          }}
-        >
-          {letters[3]}
-        </div>
+        <div className="letter top">{letters[0]}</div>
+        <div className="letter bottom">{letters[1]}</div>
+        <div className="letter left">{letters[2]}</div>
+        <div className="letter right">{letters[3]}</div>
       </div>
     </div>
   );

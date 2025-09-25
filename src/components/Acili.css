@@ -1,0 +1,146 @@
+.acili-container {
+  text-align: center;
+  margin: 20px;
+  font-family: "Comic Sans MS", cursive;
+}
+
+.acili-title {
+  color: #e91e63;
+  text-shadow: 2px 2px #f8bbd0;
+  margin-bottom: 20px;
+}
+
+/* Harf Alanı */
+.letter-area {
+  width: 650px;
+  height: 300px;
+  margin: 0 auto;
+  border: 4px solid #e91e63;
+  border-radius: 15px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.2);
+}
+.letter {
+  position: absolute;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Başarı Tablosu */
+.success-box {
+  width: 260px;
+  border: 3px solid #ff5722;
+  border-radius: 15px;
+  padding: 15px;
+  margin: 20px auto;
+  background-color: #fff3e0;
+  text-align: left;
+  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.2);
+}
+.success-box h4 {
+  color: #ff5722;
+}
+
+/* İstatistik Tablosu */
+.stats {
+  margin-top: 20px;
+}
+.stats h3 {
+  color: #9c27b0;
+}
+.levels {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.level {
+  width: 35px;
+  height: 35px;
+  border: 2px solid #9c27b0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background-color: white;
+  font-weight: bold;
+}
+.level.done {
+  background-color: #4caf50;
+  color: white;
+}
+.level.current {
+  background-color: #ffeb3b;
+}
+
+/* Ayarlar */
+.settings-box {
+  margin-top: 20px;
+  border: 3px dashed #3f51b5;
+  border-radius: 15px;
+  padding: 20px;
+  width: 500px;
+  max-width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: #e8eaf6;
+  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.2);
+  text-align: left;
+}
+.settings-box div {
+  margin: 10px 0;
+}
+
+/* Butonlar */
+.buttons {
+  margin-top: 20px;
+}
+.start-btn,
+.exit-btn {
+  padding: 15px 40px;
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  margin: 5px;
+  cursor: pointer;
+  box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.2);
+  transition: 0.3s;
+}
+.start-btn {
+  background-color: #4caf50;
+}
+.start-btn:hover {
+  background-color: #45a049;
+}
+.exit-btn {
+  background-color: #f44336;
+}
+.exit-btn:hover {
+  background-color: #e53935;
+}
+
+/* 📱 Mobil uyum */
+@media (max-width: 700px) {
+  .letter-area {
+    width: 95%;
+    height: 200px;
+  }
+  .letter {
+    font-size: 20px !important;
+  }
+  .success-box {
+    width: 90%;
+  }
+  .settings-box {
+    width: 95%;
+    padding: 15px;
+  }
+  .start-btn,
+  .exit-btn {
+    font-size: 16px;
+    padding: 10px 25px;
+  }
+}

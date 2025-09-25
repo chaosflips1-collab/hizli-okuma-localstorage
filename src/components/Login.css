@@ -1,0 +1,92 @@
+/* Arka plan */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(to bottom right, #89f7fe, #66a6ff);
+  font-family: "Comic Sans MS", "Baloo 2", cursive;
+}
+
+/* Kart */
+.login-card {
+  background: #fff;
+  padding: 30px 40px;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  text-align: center;
+  width: 320px;
+  animation: popIn 0.6s ease;
+}
+
+.login-card h2 {
+  margin-bottom: 20px;
+  font-size: 24px;
+  color: #333;
+}
+
+/* Inputlar */
+.login-card input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 12px;
+  border: 2px solid #ddd;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.login-card input:focus {
+  border-color: #66a6ff;
+  outline: none;
+  box-shadow: 0 0 8px rgba(102, 166, 255, 0.5);
+}
+
+/* Hata mesajı */
+.error-text {
+  color: red;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+/* Buton */
+.login-card button {
+  margin-top: 15px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.3s;
+}
+
+.login-card button:hover {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, #f6d365, #fda085);
+}
+
+/* Animasyon */
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+/* ... senin mevcut kodların aynı ... */
+
+/* 🔑 Admin linki */
+.admin-link {
+  margin-top: 15px;
+}
+
+.admin-link a {
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+}
+
+.admin-link a:hover {
+  text-decoration: underline;
+}

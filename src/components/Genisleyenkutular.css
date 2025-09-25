@@ -1,0 +1,133 @@
+.genisleyen-container {
+  text-align: center;
+  margin-top: 20px;
+  font-family: "Comic Sans MS", cursive;
+}
+
+.genisleyen-container h2 {
+  font-size: 26px;
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+/* Kontroller */
+.controls {
+  margin: 15px;
+}
+.controls label {
+  font-weight: bold;
+  margin-right: 8px;
+}
+.controls input {
+  margin-right: 10px;
+  padding: 6px 10px;
+  border: 2px solid #3498db;
+  border-radius: 6px;
+}
+.controls button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  color: white;
+  background: linear-gradient(45deg, #2ecc71, #27ae60);
+  transition: 0.3s;
+}
+.controls button:hover {
+  transform: scale(1.05);
+}
+.controls button:active {
+  background: linear-gradient(45deg, #e74c3c, #c0392b);
+}
+
+/* Ana şekil alanı */
+.shapes {
+  position: relative;
+  margin: 50px auto;
+  transition: width 0.2s, height 0.2s;
+}
+
+/* Ortadaki daire */
+.circle {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  border-radius: 50%;
+  border: 2px solid #34495e;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  color: #2c3e50;
+}
+.center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 65px;
+  height: 65px;
+  background: linear-gradient(135deg, #74ebd5, #9face6);
+  font-size: 26px;
+}
+.top {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 55px;
+  height: 55px;
+  background: linear-gradient(135deg, #fbc2eb, #a6c1ee);
+  font-size: 22px;
+}
+.bottom {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 55px;
+  height: 55px;
+  background: linear-gradient(135deg, #fad0c4, #ffd1ff);
+  font-size: 22px;
+}
+.left {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 55px;
+  height: 55px;
+  background: linear-gradient(135deg, #ffecd2, #fcb69f);
+  font-size: 22px;
+}
+.right {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 55px;
+  height: 55px;
+  background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+  font-size: 22px;
+}
+
+/* 📱 Mobil uyum */
+@media (max-width: 768px) {
+  .controls input {
+    width: 100px;
+  }
+  .controls button {
+    width: 120px;
+    margin-top: 10px;
+  }
+  .shapes {
+    margin: 30px auto;
+  }
+}
+@media (max-width: 480px) {
+  .circle {
+    width: 45px !important;
+    height: 45px !important;
+    font-size: 18px !important;
+  }
+  .center {
+    width: 55px !important;
+    height: 55px !important;
+    font-size: 20px !important;
+  }
+}

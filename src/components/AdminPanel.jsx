@@ -1,182 +1,124 @@
 // src/components/AdminPanel.jsx
-import React, { useEffect, useState } from "react";
-import { db } from "../firebase";
-import {
-  collection,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  query,
-  orderBy,
-  where,
-} from "firebase/firestore";
+import React, { useState, useEffect } from "react";
+import "./AdminPanel.css";
 
 export default function AdminPanel() {
   const [codes, setCodes] = useState([]);
+  const [startCode, setStartCode] = useState("");
+  const [prefix, setPrefix] = useState("");
+  const [lastNumber, setLastNumber] = useState(null);
 
-  // Kodları Firestore'dan çek
-  const fetchCodes = async () => {
-    const q = query(collection(db, "codes"), orderBy("code", "asc"));
-    const snapshot = await getDocs(q);
-    setCodes(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-  };
-
+  // 🔄 LocalStorage'dan mevcut kodları çek
   useEffect(() => {
-    fetchCodes();
+    const savedCodes = JSON.parse(localStorage.getItem("codes")) || [];
+    setCodes(savedCodes);
   }, []);
 
-  // Yeni kod üret
-  const generateNewCode = async () => {
-    let maxNumber = 0;
-    codes.forEach((c) => {
-      const match = c.code.match(/ogr(\d+)/);
-      if (match) {
-        const num = parseInt(match[1]);
-        if (num > maxNumber) maxNumber = num;
-      }
-    });
+  // ✅ Kod Üret → LocalStorage’a kaydet
+  const handleGenerateCodes = () => {
+    let localPrefix = prefix;
+    let numberPart = lastNumber;
 
-    const newNumber = (maxNumber + 1).toString().padStart(4, "0");
-    const newCode = `ogr${newNumber}`;
+    if (!codes.length) {
+      if (!startCode) return;
 
-    await addDoc(collection(db, "codes"), {
-      code: newCode,
-      lockedTo: null,
-      createdAt: new Date(),
-    });
+      localPrefix = startCode.match(/[^\d]+/)[0];
+      numberPart = parseInt(startCode.match(/\d+/)[0]);
 
-    fetchCodes();
+      setPrefix(localPrefix);
+      setLastNumber(numberPart - 1);
+    }
+
+    const newCodes = [];
+    for (let i = 1; i <= 20; i++) {
+      const num = (numberPart ?? lastNumber) + i;
+      const formatted = String(num).padStart(4, "0");
+      const codeId = `${localPrefix}${formatted}`;
+
+      newCodes.push({
+        id: codeId,
+        code: codeId,
+        lockedTo: null,
+      });
+    }
+
+    const updatedCodes = [...codes, ...newCodes];
+    setCodes(updatedCodes);
+    localStorage.setItem("codes", JSON.stringify(updatedCodes));
+
+    setLastNumber((numberPart ?? lastNumber) + 20);
+    setStartCode("");
   };
 
-  // Öğrenciyi sil (students koleksiyonundan)
-  const removeStudent = async (lockedTo) => {
-    if (!lockedTo) return;
-    const q = query(
-      collection(db, "students"),
-      where("code", "==", lockedTo.code),
-      where("name", "==", lockedTo.name),
-      where("surname", "==", lockedTo.surname),
-      where("className", "==", lockedTo.className)
-    );
-    const snapshot = await getDocs(q);
-
-    snapshot.forEach(async (docSnap) => {
-      await deleteDoc(doc(db, "students", docSnap.id));
-    });
-  };
-
-  // Resetle → kod boşalır + öğrenci silinir
-  const resetCode = async (id, lockedTo) => {
-    const ref = doc(db, "codes", id);
-    await updateDoc(ref, { lockedTo: null });
-    await removeStudent(lockedTo);
-    fetchCodes();
-  };
-
-  // Sil → kod tamamen silinir + öğrenci silinir
-  const deleteCode = async (id, lockedTo) => {
-    await removeStudent(lockedTo);
-    const ref = doc(db, "codes", id);
-    await deleteDoc(ref);
-    fetchCodes();
+  // ❌ Kod sil
+  const handleDeleteCode = (id) => {
+    const updatedCodes = codes.filter((c) => c.id !== id);
+    setCodes(updatedCodes);
+    localStorage.setItem("codes", JSON.stringify(updatedCodes));
   };
 
   return (
-    <div
-      style={{
-        textAlign: "center",
-        minHeight: "100vh",
-        background: "linear-gradient(to bottom, #fff1c1, #ffb997)",
-        fontFamily: "'Comic Sans MS', Arial, sans-serif",
-        padding: "30px",
-      }}
-    >
-      <h2 style={{ marginBottom: "20px" }}>📋 Kod Listesi</h2>
+    <div className="admin-panel-container">
+      <h1>⚙️ Admin Panel</h1>
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-          maxWidth: "500px",
-          margin: "0 auto",
-        }}
-      >
-        {codes.map((c) => (
-          <div
-            key={c.id}
-            style={{
-              backgroundColor: "white",
-              borderRadius: "10px",
-              padding: "10px",
-              boxShadow: "0px 4px 8px rgba(0,0,0,0.2)",
-              fontWeight: "bold",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <span>
-              {c.code}{" "}
-              {c.lockedTo ? (
-                <span style={{ color: "red" }}>
-                  🔒 {c.lockedTo.name} {c.lockedTo.surname} (
-                  {c.lockedTo.className})
-                </span>
-              ) : (
-                <span style={{ color: "green" }}>(Boş)</span>
-              )}
-            </span>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                onClick={() => resetCode(c.id, c.lockedTo)}
-                style={{
-                  backgroundColor: "orange",
-                  border: "none",
-                  padding: "5px 10px",
-                  borderRadius: "6px",
-                  color: "white",
-                  cursor: "pointer",
-                }}
-              >
-                ♻ Resetle
-              </button>
-              <button
-                onClick={() => deleteCode(c.id, c.lockedTo)}
-                style={{
-                  backgroundColor: "red",
-                  border: "none",
-                  padding: "5px 10px",
-                  borderRadius: "6px",
-                  color: "white",
-                  cursor: "pointer",
-                }}
-              >
-                ❌ Sil
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Kod Üretme */}
+      <section className="admin-section">
+        <h2>🔑 Kod Üret</h2>
+        <div className="admin-actions">
+          {!codes.length && (
+            <input
+              type="text"
+              placeholder="örn: öğr0001"
+              value={startCode}
+              onChange={(e) => setStartCode(e.target.value)}
+            />
+          )}
+          <button onClick={handleGenerateCodes}>➕ 20 Kod Üret</button>
+        </div>
+        {lastNumber && (
+          <p className="info-text">
+            📌 En son üretilen kod:{" "}
+            <b>
+              {prefix}
+              {String(lastNumber).padStart(4, "0")}
+            </b>
+          </p>
+        )}
+      </section>
 
-      <button
-        onClick={generateNewCode}
-        style={{
-          marginTop: "20px",
-          padding: "10px 20px",
-          borderRadius: "10px",
-          border: "none",
-          backgroundColor: "green",
-          color: "white",
-          fontWeight: "bold",
-          cursor: "pointer",
-          boxShadow: "0px 4px 8px rgba(0,0,0,0.2)",
-        }}
-      >
-        ➕ Yeni Kod Üret
-      </button>
+      {/* Kod Listesi */}
+      <section className="admin-section">
+        <h2>📋 Kod Listesi</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Kod</th>
+              <th>Kullanan Öğrenci</th>
+              <th>Sil</th>
+            </tr>
+          </thead>
+          <tbody>
+            {codes.map((c) => (
+              <tr key={c.id}>
+                <td>{c.code}</td>
+                <td>
+                  {c.lockedTo
+                    ? `${c.lockedTo.name} ${c.lockedTo.surname} (${c.lockedTo.className})`
+                    : "—"}
+                </td>
+                <td>
+                  <button
+                    className="delete-btn"
+                    onClick={() => handleDeleteCode(c.id)}
+                  >
+                    ❌
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
     </div>
   );
 }

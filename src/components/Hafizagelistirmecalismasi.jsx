@@ -1,6 +1,10 @@
+// src/components/Hafizagelistirmecalismasi.jsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ çıkış için
+import "./Hafizagelistirmecalismasi.css";
 
 export default function Hafizagelistirmecalismasi() {
+  const navigate = useNavigate();
   const gridSize = 5; // 5x5 kare
   const [highlighted, setHighlighted] = useState([]);
   const [userAnswers, setUserAnswers] = useState([]);
@@ -20,7 +24,6 @@ export default function Hafizagelistirmecalismasi() {
     setUserAnswers([]);
     setShowing(true);
 
-    // 1 saniye sonra kutuları gizle
     setTimeout(() => {
       setShowing(false);
     }, 1000);
@@ -47,72 +50,52 @@ export default function Hafizagelistirmecalismasi() {
     setUserAnswers([...userAnswers, index]);
   };
 
+  const exitExercise = () => {
+    navigate("/panel");
+  };
+
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
+    <div className="hafiza-container">
       <h2>🧠 Hafıza Geliştirme Çalışması</h2>
-      <button
-        onClick={startGame}
-        style={{
-          padding: "10px 20px",
-          background: "blue",
-          color: "white",
-          borderRadius: "8px",
-          marginBottom: "20px",
-          cursor: "pointer",
-        }}
-      >
-        Başla
-      </button>
+      <div className="buttons">
+        <button className="start-btn" onClick={startGame}>
+          ▶ Başla
+        </button>
+        <button className="exit-btn" onClick={exitExercise}>
+          ❌ Çıkış
+        </button>
+      </div>
 
       {/* Kareler */}
       <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${gridSize}, 60px)`,
-          gap: "8px",
-          justifyContent: "center",
-        }}
+        className="grid"
+        style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}
       >
         {Array.from({ length: gridSize * gridSize }).map((_, index) => {
-          let bg = "#eee";
+          let boxClass = "box";
 
           if (showing && highlighted.includes(index)) {
-            bg = "yellow"; // gösterim sırasında sarı
+            boxClass += " highlight"; // gösterim sırasında sarı
           } else if (userAnswers.includes(index)) {
             if (highlighted.includes(index)) {
-              bg = "green"; // doğru
+              boxClass += " correct"; // doğru
             } else {
-              bg = "red"; // yanlış
+              boxClass += " wrong"; // yanlış
             }
           }
 
           return (
             <div
               key={index}
+              className={boxClass}
               onClick={() => handleClick(index)}
-              style={{
-                width: "60px",
-                height: "60px",
-                backgroundColor: bg,
-                border: "1px solid #ccc",
-                cursor: "pointer",
-              }}
             />
           );
         })}
       </div>
 
       {/* Skor Tablosu */}
-      <div
-        style={{
-          marginTop: "20px",
-          background: "#fff3cd",
-          display: "inline-block",
-          padding: "15px",
-          borderRadius: "8px",
-          border: "1px solid #f0ad4e",
-        }}
-      >
+      <div className="score-board">
         <h3>📊 Skor Tablosu</h3>
         <p>✅ Doğru: {score.correct}</p>
         <p>❌ Yanlış: {score.wrong}</p>

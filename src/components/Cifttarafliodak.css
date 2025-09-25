@@ -1,0 +1,128 @@
+.cift-container {
+  text-align: center;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #fceabb, #f8b500);
+  font-family: "Comic Sans MS", cursive;
+  padding: 30px;
+}
+
+.cift-container h2 {
+  font-size: 26px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.menu button {
+  padding: 15px 40px;
+  font-size: 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  margin: 5px;
+  transition: 0.3s;
+}
+
+.start-btn {
+  background-color: #4caf50;
+  color: white;
+}
+.start-btn:hover {
+  background-color: #45a049;
+}
+
+.exit-btn {
+  background-color: #f44336;
+  color: white;
+}
+.exit-btn:hover {
+  background-color: #d32f2f;
+}
+
+.warning {
+  margin-top: 15px;
+  color: red;
+}
+
+.word-boxes {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin: 40px 0;
+  flex-wrap: wrap;
+}
+
+.word-box {
+  width: 200px;
+  height: 100px;
+  background: white;
+  border: 3px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: bold;
+  border-radius: 12px;
+}
+
+.stats p {
+  margin: 6px 0;
+  font-size: 16px;
+}
+
+.answer-btn {
+  margin-top: 20px;
+  padding: 15px 30px;
+  font-size: 20px;
+  font-weight: bold;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.answer-btn:hover {
+  background-color: #1976d2;
+}
+
+.message {
+  margin-top: 15px;
+  font-size: 18px;
+}
+
+/* 📱 Mobil uyum */
+@media (max-width: 768px) {
+  .word-boxes {
+    gap: 20px;
+  }
+
+  .word-box {
+    width: 150px;
+    height: 80px;
+    font-size: 22px;
+  }
+
+  .answer-btn {
+    width: 100%;
+    font-size: 18px;
+  }
+
+  .menu button {
+    width: 100%;
+    margin: 10px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .word-box {
+    width: 120px;
+    height: 70px;
+    font-size: 20px;
+  }
+
+  .answer-btn {
+    padding: 12px 20px;
+    font-size: 16px;
+  }
+}

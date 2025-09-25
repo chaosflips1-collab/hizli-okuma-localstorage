@@ -1,0 +1,107 @@
+.odak-container {
+  text-align: center;
+  margin: 20px;
+  font-family: "Comic Sans MS", cursive;
+}
+
+.odak-title {
+  color: #2e7d32;
+  text-shadow: 1px 1px #c8e6c9;
+  margin-bottom: 10px;
+}
+
+.odak-desc {
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.odak-shape {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  margin: 0 auto;
+}
+
+.odak-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  background: red;
+  border-radius: 50%;
+}
+
+.odak-number {
+  position: absolute;
+  font-size: 28px;
+  font-weight: bold;
+  color: black;
+}
+.odak-number.top {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.odak-number.bottom {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.odak-number.left {
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.odak-number.right {
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.odak-buttons {
+  margin-top: 20px;
+}
+
+.start-btn,
+.exit-btn {
+  padding: 12px 30px;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  margin: 5px;
+  cursor: pointer;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+  transition: 0.3s;
+}
+.start-btn {
+  background-color: #4caf50;
+}
+.start-btn:hover {
+  background-color: #43a047;
+}
+.exit-btn {
+  background-color: #f44336;
+}
+.exit-btn:hover {
+  background-color: #e53935;
+}
+
+/* 📱 Mobil uyum */
+@media (max-width: 700px) {
+  .odak-shape {
+    width: 180px;
+    height: 180px;
+  }
+  .odak-number {
+    font-size: 20px;
+  }
+  .start-btn,
+  .exit-btn {
+    font-size: 14px;
+    padding: 8px 20px;
+  }
+}
