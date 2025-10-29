@@ -1,123 +1,288 @@
 // src/components/AdminPanel.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { db } from "../firebase";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  deleteDoc,
+  doc,
+  getDoc,
+  setDoc,
+} from "firebase/firestore";
 import "./AdminPanel.css";
 
 export default function AdminPanel() {
-  const [codes, setCodes] = useState([]);
-  const [startCode, setStartCode] = useState("");
-  const [prefix, setPrefix] = useState("");
-  const [lastNumber, setLastNumber] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
+  const [password, setPassword] = useState("");
+  const [lastLogin, setLastLogin] = useState(null);
+  const [firestorePassword, setFirestorePassword] = useState(null);
+  const [form, setForm] = useState({ kod: "", ad: "", soyad: "", sinif: "" });
+  const navigate = useNavigate();
 
-  // 🔄 LocalStorage'dan mevcut kodları çek
+  // 🔹 Firestore'dan admin bilgilerini çek
   useEffect(() => {
-    const savedCodes = JSON.parse(localStorage.getItem("codes")) || [];
-    setCodes(savedCodes);
+    const fetchAdminData = async () => {
+      try {
+        const adminRef = doc(db, "admins", "mainAdmin");
+        const snap = await getDoc(adminRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          setFirestorePassword(data.password);
+
+          let formattedDate = null;
+          if (data.lastLogin) {
+            if (typeof data.lastLogin === "string") {
+              formattedDate = data.lastLogin;
+            } else if (data.lastLogin.toDate) {
+              const date = data.lastLogin.toDate();
+              formattedDate = date
+                .toLocaleString("tr-TR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })
+                .replace(",", "");
+            }
+          }
+          setLastLogin(formattedDate);
+        }
+      } catch (err) {
+        console.error("Admin bilgisi alınamadı:", err);
+      }
+    };
+
+    fetchAdminData();
   }, []);
 
-  // ✅ Kod Üret → LocalStorage’a kaydet
-  const handleGenerateCodes = () => {
-    let localPrefix = prefix;
-    let numberPart = lastNumber;
+  // 🔐 Admin girişi
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (password === firestorePassword) {
+      const now = new Date();
+      const formatted = now
+        .toLocaleString("tr-TR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+        .replace(",", "");
 
-    if (!codes.length) {
-      if (!startCode) return;
+      try {
+        await setDoc(
+          doc(db, "admins", "mainAdmin"),
+          {
+            username: "admin",
+            password: firestorePassword,
+            lastLogin: formatted,
+          },
+          { merge: true }
+        );
 
-      localPrefix = startCode.match(/[^\d]+/)[0];
-      numberPart = parseInt(startCode.match(/\d+/)[0]);
-
-      setPrefix(localPrefix);
-      setLastNumber(numberPart - 1);
+        setAuthorized(true);
+        setLastLogin(formatted);
+        localStorage.setItem("adminAuth", "true");
+      } catch (err) {
+        console.error("Admin login güncellenemedi:", err);
+      }
+    } else {
+      alert("❌ Yanlış şifre!");
     }
-
-    const newCodes = [];
-    for (let i = 1; i <= 20; i++) {
-      const num = (numberPart ?? lastNumber) + i;
-      const formatted = String(num).padStart(4, "0");
-      const codeId = `${localPrefix}${formatted}`;
-
-      newCodes.push({
-        id: codeId,
-        code: codeId,
-        lockedTo: null,
-      });
-    }
-
-    const updatedCodes = [...codes, ...newCodes];
-    setCodes(updatedCodes);
-    localStorage.setItem("codes", JSON.stringify(updatedCodes));
-
-    setLastNumber((numberPart ?? lastNumber) + 20);
-    setStartCode("");
   };
 
-  // ❌ Kod sil
-  const handleDeleteCode = (id) => {
-    const updatedCodes = codes.filter((c) => c.id !== id);
-    setCodes(updatedCodes);
-    localStorage.setItem("codes", JSON.stringify(updatedCodes));
+  // 🚪 Çıkış yap
+  const handleLogout = () => {
+    localStorage.removeItem("adminAuth");
+    setAuthorized(false);
+    navigate("/admin", { replace: true }); // ✅ Artık doğru route
   };
 
+  // 🔄 Öğrenci verilerini Firestore'dan çek
+  useEffect(() => {
+    if (!authorized) return;
+    const fetchStudents = async () => {
+      try {
+        const snap = await getDocs(collection(db, "students"));
+        const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setStudents(list);
+      } catch (err) {
+        console.error("Veri çekme hatası:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStudents();
+  }, [authorized]);
+
+  // ✅ Yeni öğrenci ekle
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    try {
+      await addDoc(collection(db, "students"), form);
+      setForm({ kod: "", ad: "", soyad: "", sinif: "" });
+      alert("✅ Öğrenci başarıyla eklendi!");
+      window.location.reload();
+    } catch (err) {
+      console.error("Ekleme hatası:", err);
+      alert("⚠️ Firestore’a ekleme yapılamadı!");
+    }
+  };
+
+  // ❌ Öğrenci sil
+  const handleDelete = async (id) => {
+    if (!window.confirm("Bu öğrenciyi silmek istediğine emin misin?")) return;
+    try {
+      await deleteDoc(doc(db, "students", id));
+      setStudents(students.filter((s) => s.id !== id));
+    } catch (err) {
+      console.error("Silme hatası:", err);
+    }
+  };
+
+  // 🚫 Eğer yetkili değilse şifre ekranı çıkar
+  if (!authorized) {
+    return (
+      <div className="admin-login-screen">
+        <form className="admin-login-card" onSubmit={handlePasswordSubmit}>
+          <h2>🔒 Admin Girişi</h2>
+          <p className="login-subtext">Yönetici erişimi için şifrenizi girin</p>
+
+          <input
+            type="password"
+            placeholder="Şifre"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          <button type="submit">🚀 Giriş Yap</button>
+
+          {lastLogin && (
+            <p className="last-login">
+              🕒 Son Giriş: <b>{lastLogin}</b>
+            </p>
+          )}
+        </form>
+      </div>
+    );
+  }
+
+  // 🎓 Admin paneli
   return (
     <div className="admin-panel-container">
-      <h1>⚙️ Admin Panel</h1>
-
-      {/* Kod Üretme */}
-      <section className="admin-section">
-        <h2>🔑 Kod Üret</h2>
-        <div className="admin-actions">
-          {!codes.length && (
-            <input
-              type="text"
-              placeholder="örn: öğr0001"
-              value={startCode}
-              onChange={(e) => setStartCode(e.target.value)}
-            />
-          )}
-          <button onClick={handleGenerateCodes}>➕ 20 Kod Üret</button>
+      <div className="admin-header">
+        <h1>⚙️ Admin Panel</h1>
+        <div className="header-right">
+          {lastLogin && <p>🕒 Son Giriş: {lastLogin}</p>}
+          <button onClick={handleLogout} className="logout-btn">
+            🚪 Çıkış Yap
+          </button>
         </div>
-        {lastNumber && (
-          <p className="info-text">
-            📌 En son üretilen kod:{" "}
-            <b>
-              {prefix}
-              {String(lastNumber).padStart(4, "0")}
-            </b>
-          </p>
-        )}
+      </div>
+
+      <section className="admin-section">
+        <h2>➕ Yeni Öğrenci Ekle</h2>
+        <form className="admin-actions" onSubmit={handleAdd}>
+          <input
+            type="text"
+            placeholder="Kod"
+            value={form.kod}
+            onChange={(e) => setForm({ ...form, kod: e.target.value })}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Ad"
+            value={form.ad}
+            onChange={(e) => setForm({ ...form, ad: e.target.value })}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Soyad"
+            value={form.soyad}
+            onChange={(e) => setForm({ ...form, soyad: e.target.value })}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Sınıf"
+            value={form.sinif}
+            onChange={(e) => setForm({ ...form, sinif: e.target.value })}
+            required
+          />
+          <button type="submit">💾 Kaydet</button>
+        </form>
       </section>
 
-      {/* Kod Listesi */}
       <section className="admin-section">
-        <h2>📋 Kod Listesi</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Kod</th>
-              <th>Kullanan Öğrenci</th>
-              <th>Sil</th>
-            </tr>
-          </thead>
-          <tbody>
-            {codes.map((c) => (
-              <tr key={c.id}>
-                <td>{c.code}</td>
-                <td>
-                  {c.lockedTo
-                    ? `${c.lockedTo.name} ${c.lockedTo.surname} (${c.lockedTo.className})`
-                    : "—"}
-                </td>
-                <td>
-                  <button
-                    className="delete-btn"
-                    onClick={() => handleDeleteCode(c.id)}
-                  >
-                    ❌
-                  </button>
-                </td>
+        <div className="section-header">
+          <h2>📋 Öğrenci Listesi</h2>
+          <button
+            className="export-btn"
+            onClick={() => {
+              if (students.length === 0)
+                return alert("⚠️ Dışa aktarılacak veri yok!");
+              const header = ["Kod", "Ad", "Soyad", "Sınıf"];
+              const rows = students.map((s) => [s.kod, s.ad, s.soyad, s.sinif]);
+              const csv =
+                "data:text/csv;charset=utf-8," +
+                [header, ...rows].map((r) => r.join(",")).join("\n");
+              const link = document.createElement("a");
+              link.href = encodeURI(csv);
+              link.download = `ogrenciler_${new Date()
+                .toISOString()
+                .slice(0, 10)}.csv`;
+              document.body.appendChild(link);
+              link.click();
+            }}
+          >
+            📤 CSV İndir
+          </button>
+        </div>
+
+        {loading ? (
+          <p>⏳ Yükleniyor...</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Kod</th>
+                <th>Ad Soyad</th>
+                <th>Sınıf</th>
+                <th>Sil</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {students.map((s) => (
+                <tr key={s.id}>
+                  <td>{s.kod}</td>
+                  <td>
+                    {s.ad} {s.soyad}
+                  </td>
+                  <td>{s.sinif}</td>
+                  <td>
+                    <button
+                      className="delete-btn"
+                      onClick={() => handleDelete(s.id)}
+                    >
+                      ❌
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </section>
     </div>
   );

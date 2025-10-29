@@ -1,6 +1,8 @@
 // src/components/Panel.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { db } from "../firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import "./Panel.css";
 
 export default function Panel() {
@@ -10,29 +12,56 @@ export default function Panel() {
 
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [openCategory, setOpenCategory] = useState(null); // ✅ açılan kategori
+  const [openCategory, setOpenCategory] = useState(null);
 
   useEffect(() => {
-    let savedStudent = null;
+    const fetchStudent = async () => {
+      let activeStudent = null;
 
-    if (studentFromLogin) {
-      savedStudent = studentFromLogin;
-      localStorage.setItem("activeStudent", JSON.stringify(savedStudent));
-    } else {
-      const localStudent = localStorage.getItem("activeStudent");
-      if (localStudent) savedStudent = JSON.parse(localStudent);
-    }
+      if (studentFromLogin) {
+        // Girişten gelen öğrenci varsa direkt kullan
+        activeStudent = studentFromLogin;
+        localStorage.setItem("activeStudent", JSON.stringify(activeStudent));
+      } else {
+        // Değilse localStorage'dan al
+        const saved = localStorage.getItem("activeStudent");
+        if (saved) activeStudent = JSON.parse(saved);
+      }
 
-    if (savedStudent) {
-      setStudent(savedStudent);
-    } else {
-      navigate("/");
-    }
+      // Eğer öğrenci yoksa anasayfaya yönlendir
+      if (!activeStudent) {
+        navigate("/");
+        return;
+      }
 
-    setLoading(false);
+      try {
+        // 🔍 Firestore'dan öğrenci verisini kontrol et (güncel halini almak için)
+        const q = query(
+          collection(db, "students"),
+          where("kod", "==", activeStudent.kod)
+        );
+        const snap = await getDocs(q);
+
+        if (!snap.empty) {
+          const docData = snap.docs[0].data();
+          setStudent(docData);
+        } else {
+          // Eğer Firestore’da öğrenci bulunamazsa local veriyi göster
+          setStudent(activeStudent);
+        }
+      } catch (err) {
+        console.error("❌ Firestore hata:", err);
+        setStudent(activeStudent);
+      }
+
+      setLoading(false);
+    };
+
+    fetchStudent();
   }, [studentFromLogin, navigate]);
 
-  if (loading) return <p style={{ textAlign: "center", marginTop: "50px" }}>⏳ Yükleniyor...</p>;
+  if (loading)
+    return <p style={{ textAlign: "center", marginTop: "50px" }}>⏳ Yükleniyor...</p>;
   if (!student) return null;
 
   const handleLogout = () => {
@@ -40,7 +69,7 @@ export default function Panel() {
     navigate("/");
   };
 
-  // ✅ Tüm egzersizler
+  // ✅ Egzersiz listesi (dokunmadım)
   const exercises = [
     { id: 1, name: "Takistoskop", icon: "🔤", desc: "Kelimeleri hızlıca görüp tanıma çalışması", path: "/takistoskop", category: "goz" },
     { id: 2, name: "Köşesel", icon: "👀", desc: "Aynı anda farklı köşelere odaklanma çalışması", path: "/kosesel", category: "goz" },
@@ -59,7 +88,6 @@ export default function Panel() {
     { id: 12, name: "Hızlı Okuma", icon: "📚", desc: "Kütüphaneden hikaye seçilir, düz / bloklu / belirgin okuma yapılır.", path: "/hizliokuma", category: "hizli" },
   ];
 
-  // ✅ Kategoriler
   const categories = [
     { id: "goz", title: "👁️ Göz Algılama Çalışmaları" },
     { id: "dikkat", title: "🎯 Dikkat ve Konsantrasyon Çalışmaları" },
@@ -69,19 +97,18 @@ export default function Panel() {
 
   return (
     <div className="panel-container">
-      <h1>🎉 Hoş geldin {student.name} {student.surname}!</h1>
+      <h1>🎉 Hoş geldin {student.ad} {student.soyad}!</h1>
 
       <div className="student-card">
-        <p>👤 {student.name} {student.surname}</p>
-        <p>📚 {student.className}</p>
-        <p>🆔 {student.code}</p>
+        <p>👤 {student.ad} {student.soyad}</p>
+        <p>📚 {student.sinif}</p>
+        <p>🆔 {student.kod}</p>
       </div>
 
       <button className="logout-btn" onClick={handleLogout}>🚪 Çıkış Yap</button>
 
       <h2 className="exercise-title">🚀 Çalışma Konuları</h2>
 
-      {/* ✅ Accordion Kategoriler */}
       {categories.map((cat) => (
         <div key={cat.id} className="accordion">
           <div

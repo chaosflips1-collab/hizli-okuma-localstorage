@@ -1,17 +1,7 @@
-// src/components/Login.jsx
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { db } from "../firebase";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-  doc,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import "./Login.css";
 
 export default function Login() {
@@ -20,79 +10,71 @@ export default function Login() {
   const [surname, setSurname] = useState("");
   const [className, setClassName] = useState("");
   const [error, setError] = useState("");
-
   const navigate = useNavigate();
+
+  // 🔤 Türkçe karakterleri normalize eden yardımcı fonksiyon
+  const normalizeText = (text) => {
+    return text
+      .trim()
+      .toLocaleLowerCase("tr-TR")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // aksanları temizle
+      .replaceAll("ü", "u")
+      .replaceAll("ö", "o")
+      .replaceAll("ç", "c")
+      .replaceAll("ğ", "g")
+      .replaceAll("ı", "i")
+      .replaceAll("ş", "s");
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      // 🔍 Firestore'da kodu ara (şimdilik sadece kontrol için)
-      const q = query(collection(db, "codes"), where("code", "==", code));
-      const snap = await getDocs(q);
+      // Giriş verilerini normalize et
+      const kodNorm = code.trim();
+      const adNorm = normalizeText(name);
+      const soyadNorm = normalizeText(surname);
+      const sinifNorm = className.trim().toUpperCase();
 
+      // Firestore'dan tüm öğrencileri çek
+      const snap = await getDocs(collection(db, "students"));
       if (snap.empty) {
-        setError("❌ Kod bulunamadı!");
+        setError("⚠️ Öğrenci verisi bulunamadı!");
         return;
       }
 
-      const docSnap = snap.docs[0];
-      const docRef = docSnap.ref;
-      const data = docSnap.data();
+      // Her öğrenciyi normalize ederek karşılaştır
+      let foundStudent = null;
+      snap.forEach((docSnap) => {
+        const data = docSnap.data();
+        const dbKod = (data.kod || "").trim();
+        const dbAd = normalizeText(data.ad || "");
+        const dbSoyad = normalizeText(data.soyad || "");
+        const dbSinif = (data.sinif || "").trim().toUpperCase();
 
-      // ⚠ Eğer kod daha önce bir öğrenciye atanmışsa
-      if (data.lockedTo && data.lockedTo.name) {
         if (
-          data.lockedTo.name !== name ||
-          data.lockedTo.surname !== surname ||
-          data.lockedTo.className !== className
+          dbKod === kodNorm &&
+          dbAd === adNorm &&
+          dbSoyad === soyadNorm &&
+          dbSinif === sinifNorm
         ) {
-          setError("❌ Bu kod zaten kullanılıyor!");
-          return;
+          foundStudent = data;
         }
+      });
+
+      if (!foundStudent) {
+        setError("❌ Bilgiler hatalı veya öğrenci bulunamadı!");
+        return;
       }
 
-      // 🔄 Firestore güncelle (ileride aktif olacak)
-      await updateDoc(docRef, {
-        lockedTo: { name, surname, className },
-        startedAt: data.startedAt ? data.startedAt : serverTimestamp(),
-        progress: data.progress || 0,
-      });
-
-      await setDoc(doc(db, "students", code), {
-        code,
-        name,
-        surname,
-        className,
-        progress: data.progress || 0,
-        startedAt: data.startedAt ? data.startedAt : serverTimestamp(),
-      });
-
-      // ✅ LocalStorage senkronizasyonu → AdminPanel görecek
-      let codes = JSON.parse(localStorage.getItem("codes")) || [];
-
-      // Eğer kod yoksa ekle
-      if (!codes.find((c) => c.code === code)) {
-        codes.push({ code, lockedTo: { name, surname, className } });
-      } else {
-        // varsa güncelle
-        codes = codes.map((c) =>
-          c.code === code
-            ? { ...c, lockedTo: { name, surname, className } }
-            : c
-        );
-      }
-
-      localStorage.setItem("codes", JSON.stringify(codes));
-
-      // ✅ Öğrenci paneline yönlendir
-      navigate("/panel", {
-        state: { code, name, surname, className },
-      });
+      // ✅ Giriş başarılı
+      localStorage.setItem("activeStudent", JSON.stringify(foundStudent));
+      navigate("/panel", { state: foundStudent });
     } catch (err) {
       console.error("Login error:", err);
-      setError("⚠ Bir hata oluştu!");
+      setError("⚠️ Firestore bağlantısı başarısız!");
     }
   };
 
@@ -124,7 +106,7 @@ export default function Login() {
         />
         <input
           type="text"
-          placeholder="🏫 Sınıf (örn: 5/A)"
+          placeholder="🏫 Sınıf (örn: 5A)"
           value={className}
           onChange={(e) => setClassName(e.target.value)}
           required
@@ -133,11 +115,6 @@ export default function Login() {
         {error && <p className="error-text">{error}</p>}
 
         <button type="submit">🚀 Giriş Yap</button>
-
-        {/* 🔑 Admin Girişi butonu */}
-        <div className="admin-link">
-          <Link to="/admin-login">🔑 Admin Girişi</Link>
-        </div>
       </form>
     </div>
   );
