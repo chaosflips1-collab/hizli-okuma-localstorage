@@ -1,8 +1,8 @@
-// src/components/Panel.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { db } from "../firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
+import ExercisePlayer from "../components/ExercisePlayer";
 import "./Panel.css";
 
 export default function Panel() {
@@ -12,42 +12,59 @@ export default function Panel() {
 
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [openCategory, setOpenCategory] = useState(null);
+  const [progress, setProgress] = useState(null);
+  const [totalExercises] = useState(3); // sadece 3 egzersiz (takistoskop, köşesel, açılı)
 
   useEffect(() => {
     const fetchStudent = async () => {
       let activeStudent = null;
 
       if (studentFromLogin) {
-        // Girişten gelen öğrenci varsa direkt kullan
         activeStudent = studentFromLogin;
         localStorage.setItem("activeStudent", JSON.stringify(activeStudent));
       } else {
-        // Değilse localStorage'dan al
         const saved = localStorage.getItem("activeStudent");
         if (saved) activeStudent = JSON.parse(saved);
       }
 
-      // Eğer öğrenci yoksa anasayfaya yönlendir
       if (!activeStudent) {
         navigate("/");
         return;
       }
 
       try {
-        // 🔍 Firestore'dan öğrenci verisini kontrol et (güncel halini almak için)
-        const q = query(
-          collection(db, "students"),
-          where("kod", "==", activeStudent.kod)
-        );
+        // öğrenci kaydını kontrol et
+        const q = query(collection(db, "students"), where("kod", "==", activeStudent.kod));
         const snap = await getDocs(q);
 
-        if (!snap.empty) {
-          const docData = snap.docs[0].data();
-          setStudent(docData);
+        if (snap.empty) {
+          // öğrenci firestore'da yoksa ekle
+          await setDoc(doc(db, "students", activeStudent.kod), {
+            ad: activeStudent.ad,
+            soyad: activeStudent.soyad,
+            sinif: activeStudent.sinif,
+            kod: activeStudent.kod,
+            lastLogin: new Date().toISOString(),
+          });
+        }
+
+        setStudent(activeStudent);
+
+        // ilerleme bilgisi al
+        const progressRef = doc(db, "progress", activeStudent.kod);
+        const progressSnap = await getDoc(progressRef);
+        if (progressSnap.exists()) {
+          setProgress(progressSnap.data());
         } else {
-          // Eğer Firestore’da öğrenci bulunamazsa local veriyi göster
-          setStudent(activeStudent);
+          // yoksa yeni oluştur
+          const newProgress = {
+            currentDay: 1,
+            currentExercise: 0,
+            completedDays: [],
+            lastUpdated: new Date().toISOString(),
+          };
+          await setDoc(progressRef, newProgress);
+          setProgress(newProgress);
         }
       } catch (err) {
         console.error("❌ Firestore hata:", err);
@@ -69,31 +86,17 @@ export default function Panel() {
     navigate("/");
   };
 
-  // ✅ Egzersiz listesi (dokunmadım)
+  // 🎯 Egzersiz listesi
   const exercises = [
-    { id: 1, name: "Takistoskop", icon: "🔤", desc: "Kelimeleri hızlıca görüp tanıma çalışması", path: "/takistoskop", category: "goz" },
-    { id: 2, name: "Köşesel", icon: "👀", desc: "Aynı anda farklı köşelere odaklanma çalışması", path: "/kosesel", category: "goz" },
-    { id: 3, name: "Açılı", icon: "📖", desc: "Gözün farklı açılarda kelimeleri yakalaması", path: "/acili", category: "goz" },
-
-    { id: 4, name: "Çift Taraflı Odak", icon: "🔁", desc: "Yan yana çıkan kelimeleri takip et, aynıysa tıkla!", path: "/cifttarafliodak", category: "dikkat" },
-    { id: 5, name: "Harf Bulma Odak", icon: "🔎", desc: "Belirtilen harf/rakamı say ve cevapla!", path: "/harfbulmaodakcalismasi", category: "dikkat" },
-    { id: 6, name: "Odaklanma", icon: "🎯", desc: "Ortadaki noktaya odaklan, rakamlar değişsin!", path: "/odaklanma", category: "dikkat" },
-    { id: 7, name: "Hafıza Geliştirme", icon: "🧠", desc: "Kutuları hatırla ve doğru olanlara tıkla!", path: "/hafizagelistirmecalismasi", category: "dikkat" },
-
-    { id: 8, name: "Göz Oyunu", icon: "👁️", desc: "Emoji dört yönde hareket eder, takip et!", path: "/gozoyunu", category: "kas" },
-    { id: 9, name: "Büyüyen Şekil", icon: "📏", desc: "Şekil büyüdükçe kenardaki harfleri yakala!", path: "/buyuyensekil", category: "kas" },
-    { id: 10, name: "Genişleyen Kutular", icon: "🟥", desc: "Kutular büyüyerek ayrılır, rakamları takip et!", path: "/genisleyenkutular", category: "kas" },
-
-    { id: 11, name: "Blok Okuma", icon: "📖", desc: "Kelimeleri bloklar halinde hızlıca görme çalışması", path: "/blokokuma", category: "hizli" },
-    { id: 12, name: "Hızlı Okuma", icon: "📚", desc: "Kütüphaneden hikaye seçilir, düz / bloklu / belirgin okuma yapılır.", path: "/hizliokuma", category: "hizli" },
+    { id: "takistoskop", name: "Takistoskop", icon: "🔤", desc: "Kelimeleri hızlıca görüp tanıma çalışması", path: "/takistoskop" },
+    { id: "kosesel", name: "Köşesel", icon: "👀", desc: "Aynı anda farklı köşelere odaklanma çalışması", path: "/kosesel" },
+    { id: "acili", name: "Açılı", icon: "📖", desc: "Gözün farklı açılarda kelimeleri yakalaması", path: "/acili" },
   ];
 
-  const categories = [
-    { id: "goz", title: "👁️ Göz Algılama Çalışmaları" },
-    { id: "dikkat", title: "🎯 Dikkat ve Konsantrasyon Çalışmaları" },
-    { id: "kas", title: "💪 Göz Kaslarını Geliştirme Çalışmaları" },
-    { id: "hizli", title: "📚 Hızlı Okuma ve Okuduğunu Anlama Çalışması" },
-  ];
+  const progressRatio =
+    progress && totalExercises
+      ? ((progress.currentExercise / totalExercises) * 100).toFixed(0)
+      : 0;
 
   return (
     <div className="panel-container">
@@ -105,35 +108,30 @@ export default function Panel() {
         <p>🆔 {student.kod}</p>
       </div>
 
+      {/* 🎯 Öğrenci ilerlemesi */}
+      {progress && (
+        <div className="progress-box">
+          <p>
+            📅 Bugün <strong>{progress.currentDay}. gün</strong>,{" "}
+            <strong>{progress.currentExercise}/{totalExercises}</strong> egzersizi tamamladın 🎯
+          </p>
+          <div className="progress-bar-wrapper">
+            <div
+              className="progress-bar-fill"
+              style={{
+                width: `${progressRatio}%`,
+                background: progressRatio >= 100 ? "#00c853" : "#1976d2",
+              }}
+            ></div>
+          </div>
+        </div>
+      )}
+
       <button className="logout-btn" onClick={handleLogout}>🚪 Çıkış Yap</button>
 
-      <h2 className="exercise-title">🚀 Çalışma Konuları</h2>
-
-      {categories.map((cat) => (
-        <div key={cat.id} className="accordion">
-          <div
-            className="accordion-header"
-            onClick={() => setOpenCategory(openCategory === cat.id ? null : cat.id)}
-          >
-            <h3>{cat.title}</h3>
-            <span>{openCategory === cat.id ? "▲" : "▼"}</span>
-          </div>
-
-          {openCategory === cat.id && (
-            <div className="exercise-grid">
-              {exercises.filter((ex) => ex.category === cat.id).map((ex) => (
-                <div key={ex.id} className="exercise-card" onClick={() => navigate(ex.path)}>
-                  <div className="exercise-icon">{ex.icon}</div>
-                  <div className="exercise-info">
-                    <h3>{ex.name}</h3>
-                    <p>{ex.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
+      {/* 🔥 Günlük Egzersiz */}
+      <h2 className="exercise-title">📆 Günlük Egzersiz Planın</h2>
+      <ExercisePlayer studentCode={student.kod} className={student.sinif} />
     </div>
   );
 }

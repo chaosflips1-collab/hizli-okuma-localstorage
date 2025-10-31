@@ -1,37 +1,43 @@
-// src/components/Hafizagelistirmecalismasi.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ çıkış için
+import { useNavigate } from "react-router-dom";
+import completeExercise from "../utils/completeExercise"; // ✅ eklendi
 import "./Hafizagelistirmecalismasi.css";
 
 export default function Hafizagelistirmecalismasi() {
   const navigate = useNavigate();
+  const student = JSON.parse(localStorage.getItem("activeStudent") || "{}");
+
   const gridSize = 5; // 5x5 kare
   const [highlighted, setHighlighted] = useState([]);
   const [userAnswers, setUserAnswers] = useState([]);
   const [score, setScore] = useState({ correct: 0, wrong: 0, points: 0 });
+  const [round, setRound] = useState(0);
   const [showing, setShowing] = useState(false);
 
-  // Rastgele kutular seç
   const startGame = () => {
+    if (round >= 8) {
+      alert("🧠 Hafıza Geliştirme Çalışması tamamlandı!");
+      completeExercise(student.kod, student.sinif, navigate); // ✅ Firestore ilerlemesi
+      return;
+    }
+
     const randomBoxes = [];
     while (randomBoxes.length < 3) {
       const random = Math.floor(Math.random() * gridSize * gridSize);
-      if (!randomBoxes.includes(random)) {
-        randomBoxes.push(random);
-      }
+      if (!randomBoxes.includes(random)) randomBoxes.push(random);
     }
+
     setHighlighted(randomBoxes);
     setUserAnswers([]);
     setShowing(true);
-
-    setTimeout(() => {
-      setShowing(false);
-    }, 1000);
+    setTimeout(() => setShowing(false), 1000);
   };
 
-  // Kareye tıklandığında
   const handleClick = (index) => {
     if (userAnswers.includes(index)) return;
+
+    const updatedAnswers = [...userAnswers, index];
+    setUserAnswers(updatedAnswers);
 
     if (highlighted.includes(index)) {
       setScore((prev) => ({
@@ -47,7 +53,19 @@ export default function Hafizagelistirmecalismasi() {
       }));
     }
 
-    setUserAnswers([...userAnswers, index]);
+    // ✅ Tüm tıklamalar bitince yeni tur
+    if (updatedAnswers.length >= 3) {
+      setRound((r) => {
+        const newRound = r + 1;
+        if (newRound >= 8) {
+          alert("🧩 Egzersiz tamamlandı!");
+          completeExercise(student.kod, student.sinif, navigate);
+        } else {
+          startGame();
+        }
+        return newRound;
+      });
+    }
   };
 
   const exitExercise = () => {
@@ -57,6 +75,7 @@ export default function Hafizagelistirmecalismasi() {
   return (
     <div className="hafiza-container">
       <h2>🧠 Hafıza Geliştirme Çalışması</h2>
+
       <div className="buttons">
         <button className="start-btn" onClick={startGame}>
           ▶ Başla
@@ -66,7 +85,6 @@ export default function Hafizagelistirmecalismasi() {
         </button>
       </div>
 
-      {/* Kareler */}
       <div
         className="grid"
         style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}
@@ -75,13 +93,9 @@ export default function Hafizagelistirmecalismasi() {
           let boxClass = "box";
 
           if (showing && highlighted.includes(index)) {
-            boxClass += " highlight"; // gösterim sırasında sarı
+            boxClass += " highlight";
           } else if (userAnswers.includes(index)) {
-            if (highlighted.includes(index)) {
-              boxClass += " correct"; // doğru
-            } else {
-              boxClass += " wrong"; // yanlış
-            }
+            boxClass += highlighted.includes(index) ? " correct" : " wrong";
           }
 
           return (
@@ -94,12 +108,12 @@ export default function Hafizagelistirmecalismasi() {
         })}
       </div>
 
-      {/* Skor Tablosu */}
       <div className="score-board">
         <h3>📊 Skor Tablosu</h3>
         <p>✅ Doğru: {score.correct}</p>
         <p>❌ Yanlış: {score.wrong}</p>
         <p>⭐ Puan: {score.points}</p>
+        <p>🌀 Tur: {round}/8</p>
       </div>
     </div>
   );

@@ -1,167 +1,106 @@
 .takistoskop-container {
   text-align: center;
-  margin: 10px;
+  margin: 0 auto;
   font-family: "Comic Sans MS", sans-serif;
+  transform: scale(0.82);
+  transform-origin: top center;
+  max-width: 400px;
 }
 
 .takistoskop-title {
   color: #ff6600;
   text-shadow: 2px 2px #ffd966;
-  font-size: 1.5rem;
-  margin-bottom: 15px;
+  font-size: 1.1rem;
+  margin-bottom: 4px;
 }
 
-/* Üst alan: Gösterim + Başarı Tablosu */
 .top-section {
   display: flex;
-  flex-wrap: wrap; /* ✅ mobilde alta geçer */
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 15px;
+  gap: 6px;
 }
 
 .display-box {
-  flex: 1 1 300px;
-  max-width: 500px;
-  border: 4px solid #4caf50;
-  border-radius: 15px;
+  flex: 1 1 250px;
+  max-width: 340px;
+  border: 2px solid #4caf50;
+  border-radius: 8px;
   background: #f9f9f9;
-  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.1);
 }
 
 .display-item {
-  height: 120px;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  border-bottom: 2px dashed #4caf50;
-  font-size: 2rem;
+  border-bottom: 1px dashed #4caf50;
+  font-size: 1.3rem;
   color: #333;
 }
 
 .answer-section {
-  padding: 10px;
+  padding: 3px;
 }
 
 .answer-input {
-  padding: 8px;
-  font-size: 1rem;
-  border-radius: 10px;
+  padding: 5px;
+  font-size: 0.8rem;
+  border-radius: 6px;
   border: 2px solid #4caf50;
-  width: 60%;
-  max-width: 250px;
+  width: 45%;
+  max-width: 120px;
 }
 
 .answer-btn {
-  margin-left: 10px;
-  padding: 8px 16px;
-  border-radius: 10px;
+  margin-left: 4px;
+  padding: 5px 8px;
+  border-radius: 6px;
   background: #4caf50;
   color: white;
   border: none;
   cursor: pointer;
   font-weight: bold;
+  font-size: 0.75rem;
 }
 
-/* Başarı Tablosu */
 .score-board {
-  flex: 1 1 200px;
-  max-width: 280px;
-  border: 3px solid #ff9800;
-  border-radius: 15px;
-  padding: 12px;
-  text-align: left;
+  max-width: 85%;
+  margin: 4px auto;
+  border: 1.5px solid #ffb300;
+  border-radius: 6px;
   background: #fff8e1;
-  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.08);
+  padding: 4px 6px;
+  text-align: center;
+  font-size: 0.68rem;
 }
 
 .score-board h4 {
   color: #ff9800;
-  margin-bottom: 8px;
+  font-size: 0.75rem;
+  margin-bottom: 2px;
 }
 
-/* İstatistik Tablosu */
-.stats-section {
-  margin-top: 20px;
-}
-
-.stats-title {
-  color: #2196f3;
-  margin-bottom: 10px;
-}
-
-.levels {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.level-circle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2px solid #2196f3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
-  color: #333;
-}
-
-/* Ayarlar Menüsü */
-.settings-box {
-  margin-top: 20px;
-  border: 3px dashed #9c27b0;
-  border-radius: 15px;
-  padding: 15px;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
-  background: #f3e5f5;
-}
-
-.settings-box h4 {
-  color: #9c27b0;
-  margin-bottom: 10px;
-}
-
-.settings-box label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.settings-box select,
-.settings-box input[type="number"],
-.settings-box input[type="range"],
-.settings-box input[type="color"] {
-  margin-bottom: 12px;
-  width: 100%;
-  padding: 6px;
-  border-radius: 8px;
-  border: 1px solid #aaa;
-}
-
-/* Butonlar */
 .button-row {
-  margin-top: 20px;
+  margin-top: 5px;
   display: flex;
   justify-content: center;
-  gap: 15px;
+  gap: 6px;
 }
 
 .start-btn,
 .exit-btn {
-  padding: 12px 30px;
-  font-size: 1rem;
+  padding: 5px 18px;
+  font-size: 0.75rem;
   font-weight: bold;
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 6px;
   cursor: pointer;
-  box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .start-btn {
@@ -172,23 +111,56 @@
   background: #f44336;
 }
 
-/* ✅ Mobil için özel */
-@media (max-width: 600px) {
-  .display-item {
-    font-size: 1.5rem;
-    height: 100px;
+/* ⚙️ Açılır Ayarlar */
+.settings-wrapper {
+  margin-top: 10px;
+}
+
+.settings-header {
+  background: #9c27b0;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+  display: inline-block;
+}
+
+.settings-header:hover {
+  background: #7b1fa2;
+}
+
+.settings-box {
+  margin-top: 10px;
+  border: 2px dashed #9c27b0;
+  border-radius: 15px;
+  padding: 10px;
+  max-width: 260px;
+  margin-left: auto;
+  margin-right: auto;
+  background: #f3e5f5;
+  animation: slideDown 0.4s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 500px) {
+  .takistoskop-container {
+    transform: scale(0.78);
   }
 
-  .answer-input {
-    width: 100%;
-    max-width: 100%;
-    margin-bottom: 10px;
-  }
-
-  .answer-btn {
-    margin-left: 0;
-    margin-top: 10px;
-    width: 100%;
+  .settings-box {
+    max-width: 220px;
   }
 
   .button-row {

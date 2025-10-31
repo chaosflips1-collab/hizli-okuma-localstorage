@@ -15,6 +15,7 @@ import "./AdminPanel.css";
 
 export default function AdminPanel() {
   const [students, setStudents] = useState([]);
+  const [progressData, setProgressData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
   const [password, setPassword] = useState("");
@@ -66,16 +67,7 @@ export default function AdminPanel() {
     e.preventDefault();
     if (password === firestorePassword) {
       const now = new Date();
-      const formatted = now
-        .toLocaleString("tr-TR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })
-        .replace(",", "");
+      const formatted = now.toLocaleString("tr-TR");
 
       try {
         await setDoc(
@@ -103,7 +95,7 @@ export default function AdminPanel() {
   const handleLogout = () => {
     localStorage.removeItem("adminAuth");
     setAuthorized(false);
-    navigate("/admin", { replace: true }); // ✅ Artık doğru route
+    navigate("/admin", { replace: true });
   };
 
   // 🔄 Öğrenci verilerini Firestore'dan çek
@@ -121,6 +113,24 @@ export default function AdminPanel() {
       }
     };
     fetchStudents();
+  }, [authorized]);
+
+  // 🔄 Öğrenci ilerlemelerini çek
+  useEffect(() => {
+    if (!authorized) return;
+    const fetchProgress = async () => {
+      try {
+        const snap = await getDocs(collection(db, "progress"));
+        const list = snap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setProgressData(list);
+      } catch (err) {
+        console.error("İlerleme verisi alınamadı:", err);
+      }
+    };
+    fetchProgress();
   }, [authorized]);
 
   // ✅ Yeni öğrenci ekle
@@ -148,7 +158,6 @@ export default function AdminPanel() {
     }
   };
 
-  // 🚫 Eğer yetkili değilse şifre ekranı çıkar
   if (!authorized) {
     return (
       <div className="admin-login-screen">
@@ -189,67 +198,59 @@ export default function AdminPanel() {
         </div>
       </div>
 
+      {/* 🧩 Yeni öğrenci ekleme */}
       <section className="admin-section">
         <h2>➕ Yeni Öğrenci Ekle</h2>
         <form className="admin-actions" onSubmit={handleAdd}>
-          <input
-            type="text"
-            placeholder="Kod"
-            value={form.kod}
-            onChange={(e) => setForm({ ...form, kod: e.target.value })}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Ad"
-            value={form.ad}
-            onChange={(e) => setForm({ ...form, ad: e.target.value })}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Soyad"
-            value={form.soyad}
-            onChange={(e) => setForm({ ...form, soyad: e.target.value })}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Sınıf"
-            value={form.sinif}
-            onChange={(e) => setForm({ ...form, sinif: e.target.value })}
-            required
-          />
+          <input type="text" placeholder="Kod" value={form.kod} onChange={(e) => setForm({ ...form, kod: e.target.value })} required />
+          <input type="text" placeholder="Ad" value={form.ad} onChange={(e) => setForm({ ...form, ad: e.target.value })} required />
+          <input type="text" placeholder="Soyad" value={form.soyad} onChange={(e) => setForm({ ...form, soyad: e.target.value })} required />
+          <input type="text" placeholder="Sınıf" value={form.sinif} onChange={(e) => setForm({ ...form, sinif: e.target.value })} required />
           <button type="submit">💾 Kaydet</button>
         </form>
       </section>
 
+      {/* 🧠 Öğrenci İlerleme Takibi */}
+      <section className="admin-section">
+        <h2>📊 Öğrenci İlerleme Takibi</h2>
+        {progressData.length === 0 ? (
+          <p>⏳ Henüz ilerleme kaydı yok</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Ad Soyad</th>
+                <th>Sınıf</th>
+                <th>Gün</th>
+                <th>Egzersiz</th>
+                <th>Durum</th>
+                <th>Son Güncelleme</th>
+              </tr>
+            </thead>
+            <tbody>
+              {progressData.map((p) => {
+                const studentInfo = students.find((s) => s.kod === p.id);
+                return (
+                  <tr key={p.id}>
+                    <td>{studentInfo ? `${studentInfo.ad} ${studentInfo.soyad}` : "—"}</td>
+                    <td>{studentInfo ? studentInfo.sinif : "—"}</td>
+                    <td>{p.currentDay || 0}</td>
+                    <td>{p.currentExercise !== undefined ? p.currentExercise + 1 : "—"}</td>
+                    <td>{p.completed ? "✅ Tamamlandı" : "🕓 Devam Ediyor"}</td>
+                    <td>{p.lastUpdate ? new Date(p.lastUpdate.seconds * 1000).toLocaleString("tr-TR") : "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      {/* 📋 Öğrenci Listesi */}
       <section className="admin-section">
         <div className="section-header">
           <h2>📋 Öğrenci Listesi</h2>
-          <button
-            className="export-btn"
-            onClick={() => {
-              if (students.length === 0)
-                return alert("⚠️ Dışa aktarılacak veri yok!");
-              const header = ["Kod", "Ad", "Soyad", "Sınıf"];
-              const rows = students.map((s) => [s.kod, s.ad, s.soyad, s.sinif]);
-              const csv =
-                "data:text/csv;charset=utf-8," +
-                [header, ...rows].map((r) => r.join(",")).join("\n");
-              const link = document.createElement("a");
-              link.href = encodeURI(csv);
-              link.download = `ogrenciler_${new Date()
-                .toISOString()
-                .slice(0, 10)}.csv`;
-              document.body.appendChild(link);
-              link.click();
-            }}
-          >
-            📤 CSV İndir
-          </button>
         </div>
-
         {loading ? (
           <p>⏳ Yükleniyor...</p>
         ) : (
@@ -266,18 +267,9 @@ export default function AdminPanel() {
               {students.map((s) => (
                 <tr key={s.id}>
                   <td>{s.kod}</td>
-                  <td>
-                    {s.ad} {s.soyad}
-                  </td>
+                  <td>{s.ad} {s.soyad}</td>
                   <td>{s.sinif}</td>
-                  <td>
-                    <button
-                      className="delete-btn"
-                      onClick={() => handleDelete(s.id)}
-                    >
-                      ❌
-                    </button>
-                  </td>
+                  <td><button className="delete-btn" onClick={() => handleDelete(s.id)}>❌</button></td>
                 </tr>
               ))}
             </tbody>

@@ -1,11 +1,12 @@
-// src/components/Acili.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import library from "../data/library.json";
-import "./Acili.css"; // ✅ CSS eklendi
+import completeExercise from "../utils/completeExercise"; // ✅ yeni
+import "./Acili.css";
 
 export default function Acili() {
   const navigate = useNavigate();
+  const student = JSON.parse(localStorage.getItem("activeStudent") || "{}");
 
   const [bgColor, setBgColor] = useState("#ffffff");
   const [font, setFont] = useState("Arial");
@@ -15,7 +16,6 @@ export default function Acili() {
   const [time, setTime] = useState(0);
   const [phase, setPhase] = useState("down");
   const [letters, setLetters] = useState([]);
-
   const [speed, setSpeed] = useState(1000);
 
   const pool = library.letters || [];
@@ -60,8 +60,11 @@ export default function Acili() {
           if (newTime >= 180) {
             clearInterval(timer);
             setRunning(false);
-            alert("Açılı Okuma Egzersizi tamamlandı!");
-            navigate("/panel");
+            alert("📐 Açılı Okuma Egzersizi tamamlandı!");
+
+            // ✅ Firestore ilerleme güncellemesi
+            completeExercise(student.kod, student.sinif, navigate);
+
             return prev;
           }
 
@@ -97,27 +100,28 @@ export default function Acili() {
     <div className="acili-container">
       <h2 className="acili-title">📐 Açılı Okuma Egzersizi</h2>
 
-      {/* Harf Alanı */}
       <div className="letter-area" style={{ backgroundColor: bgColor }}>
         {letters.map((ltr, idx) => (
           <span
             key={idx}
             className="letter"
-            style={{ fontFamily: font, fontSize: `${fontSize}px`, ...getLetterStyle(idx) }}
+            style={{
+              fontFamily: font,
+              fontSize: `${fontSize}px`,
+              ...getLetterStyle(idx),
+            }}
           >
             {ltr}
           </span>
         ))}
       </div>
 
-      {/* Başarı Tablosu */}
       <div className="success-box">
         <h4>📊 Başarı Tablosu</h4>
         <p>⏳ Kalan Süre: {180 - time} sn</p>
         <p>⚡ Hız: {speed} ms</p>
       </div>
 
-      {/* İstatistik Tablosu */}
       <div className="stats">
         <h3>📈 İstatistik Tablosu</h3>
         <div className="levels">
@@ -127,7 +131,11 @@ export default function Acili() {
               <div
                 key={lvl}
                 className={`level ${
-                  time / 18 >= lvl ? "done" : time / 18 + 1 === lvl ? "current" : ""
+                  time / 18 >= lvl
+                    ? "done"
+                    : time / 18 + 1 === lvl
+                    ? "current"
+                    : ""
                 }`}
               >
                 {lvl}
@@ -137,7 +145,6 @@ export default function Acili() {
         </div>
       </div>
 
-      {/* Ayarlar */}
       <div className="settings-box">
         <h4>⚙️ Ayarlar Menüsü</h4>
         <div>
@@ -151,7 +158,11 @@ export default function Acili() {
         </div>
         <div>
           <label>Font: </label>
-          <select value={font} onChange={(e) => setFont(e.target.value)} disabled={running}>
+          <select
+            value={font}
+            onChange={(e) => setFont(e.target.value)}
+            disabled={running}
+          >
             <option value="Arial">Arial</option>
             <option value="Verdana">Verdana</option>
             <option value="Courier New">Courier New</option>
@@ -171,7 +182,6 @@ export default function Acili() {
         </div>
       </div>
 
-      {/* Butonlar */}
       <div className="buttons">
         <button className="start-btn" onClick={startExercise} disabled={running}>
           ✔ Başla

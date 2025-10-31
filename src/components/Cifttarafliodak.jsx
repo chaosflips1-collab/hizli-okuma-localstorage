@@ -1,11 +1,12 @@
-// src/components/Cifttarafliodak.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import library from "../data/library.json";
-import "./Cifttarafliodak.css"; // ✅ CSS eklendi
+import completeExercise from "../utils/completeExercise"; // ✅ eklendi
+import "./Cifttarafliodak.css";
 
 export default function Cifttarafliodak() {
   const navigate = useNavigate();
+  const student = JSON.parse(localStorage.getItem("activeStudent") || "{}");
 
   const [running, setRunning] = useState(false);
   const [words, setWords] = useState(["", ""]);
@@ -14,10 +15,8 @@ export default function Cifttarafliodak() {
   const [message, setMessage] = useState("");
   const [timer, setTimer] = useState(3);
 
-  const studentClass = localStorage.getItem("studentClass") || "6";
-
-  const pool =
-    (library.ciftTarafliOdak && library.ciftTarafliOdak[studentClass]) || [];
+  const studentClass = student.sinif || "6";
+  const pool = (library.ciftTarafliOdak && library.ciftTarafliOdak[studentClass]) || [];
 
   const generateWords = () => {
     if (pool.length === 0) return;
@@ -41,6 +40,9 @@ export default function Cifttarafliodak() {
     if (round >= 20) {
       setRunning(false);
       setMessage(`🏆 Oyun bitti! Toplam Puan: ${score}`);
+
+      // ✅ Egzersiz bittiğinde progress güncelle
+      completeExercise(student.kod, student.sinif, navigate);
       return;
     }
 
@@ -81,7 +83,11 @@ export default function Cifttarafliodak() {
 
       {!running ? (
         <div className="menu">
-          <button className="start-btn" onClick={startExercise} disabled={pool.length === 0}>
+          <button
+            className="start-btn"
+            onClick={startExercise}
+            disabled={pool.length === 0}
+          >
             ▶ Başlat
           </button>
           <button className="exit-btn" onClick={exitExercise}>
@@ -110,7 +116,6 @@ export default function Cifttarafliodak() {
 
           {message && <p className="message">{message}</p>}
 
-          {/* 🆕 Oyun esnasında da çıkış butonu */}
           <button className="exit-btn" onClick={exitExercise} style={{ marginTop: "15px" }}>
             ❌ Çıkış
           </button>

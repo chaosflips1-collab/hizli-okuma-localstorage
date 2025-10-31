@@ -1,156 +1,87 @@
-// src/components/BlokOkuma.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import completeExercise from "../utils/completeExercise"; // ✅ eklendi
 import "./BlokOkuma.css";
-import stories from "../data/stories";
+import library from "../data/library.json";
 
 export default function BlokOkuma() {
   const navigate = useNavigate();
+  const student = JSON.parse(localStorage.getItem("activeStudent") || "{}");
 
-  const [selectedStory, setSelectedStory] = useState(null);
-  const [words, setWords] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [running, setRunning] = useState(false);
-  const [speed, setSpeed] = useState(200);
-  const [progress, setProgress] = useState(0);
-  const [wordsRead, setWordsRead] = useState(0);
-  const [showLibrary, setShowLibrary] = useState(false);
+  const [blocks, setBlocks] = useState([]);
+  const [index, setIndex] = useState(0);
+  const [time, setTime] = useState(0);
+  const [speed, setSpeed] = useState(2000);
+  const [duration] = useState(180); // 3 dakika
 
-  const intervalRef = useRef(null);
-
-  const totalWords = words.length;
+  // Blok metinleri yükle
+  useEffect(() => {
+    const texts = library.blokokuma || [
+      "Zaman, doğru kullanıldığında bir hazinedir.",
+      "Her gün biraz daha fazla öğrenmek mümkündür.",
+      "Okumak, insanın ufkunu genişletir.",
+      "Sabır, başarının en önemli anahtarıdır.",
+    ];
+    setBlocks(texts);
+  }, []);
 
   useEffect(() => {
-    if (running && totalWords > 0) {
-      intervalRef.current = setInterval(() => {
-        setCurrentIndex((prev) => {
-          const next = prev + 1;
-          setWordsRead((r) => r + 1);
-
-          if ((next + 1) % 15 === 0) {
-            setProgress((p) => Math.min(p + 1, 100));
-          }
-
-          if (progress >= 100 || next >= totalWords) {
-            clearInterval(intervalRef.current);
+    let interval;
+    if (running) {
+      interval = setInterval(() => {
+        setIndex((prev) => (prev + 1) % blocks.length);
+        setTime((prev) => {
+          const newTime = prev + 1;
+          if (newTime >= duration) {
+            clearInterval(interval);
             setRunning(false);
-            return prev;
+            alert("📚 Blok Okuma Egzersizi tamamlandı!");
+            completeExercise(student.kod, student.sinif, navigate); // ✅ ilerleme kaydı
           }
-
-          return next;
+          return newTime;
         });
       }, speed);
-    } else {
-      clearInterval(intervalRef.current);
     }
-
-    return () => clearInterval(intervalRef.current);
-  }, [running, speed, totalWords, progress]);
-
-  const handleStart = () => {
-    if (!selectedStory) return;
-    const storyWords = selectedStory.content.split(" ");
-    setWords(storyWords);
-    setCurrentIndex(0);
-    setWordsRead(0);
-    setProgress(0);
-    setRunning(true);
-  };
-
-  const handleStop = () => {
-    setRunning(false);
-  };
+    return () => clearInterval(interval);
+  }, [running, speed, duration, blocks, navigate, student.kod, student.sinif]);
 
   const handleExit = () => {
     setRunning(false);
-    setWords([]);
-    setSelectedStory(null);
     navigate("/panel");
   };
 
   return (
     <div className="blok-container">
-      <h1>📚 Blok Okuma</h1>
-      <p className="desc">
-        Kelimeleri toplu halde görebilme yeteneğini geliştirmek için uygulanan
-        bir tekniktir. Sözcükleri bloklar halinde okumak hızlı okumanın temel
-        yöntemlerindendir.
-      </p>
-
-      <button className="open-library-btn" onClick={() => setShowLibrary(true)}>
-        📖 Kütüphane
-      </button>
-
-      {showLibrary && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>📖 Hikaye Seç</h2>
-            {stories.map((story) => (
-              <button
-                key={story.id}
-                className={`story-btn ${
-                  selectedStory?.id === story.id ? "active" : ""
-                }`}
-                onClick={() => {
-                  setSelectedStory(story);
-                  setShowLibrary(false);
-                }}
-              >
-                {story.title}
-              </button>
-            ))}
-            <button className="close-btn" onClick={() => setShowLibrary(false)}>
-              Kapat
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="screen">
-        {words.length > 0 && currentIndex < words.length ? (
-          <span>{words[currentIndex]}</span>
-        ) : (
-          <span className="placeholder">
-            Başlamak için hikaye seçin ve Başla’ya tıklayın
-          </span>
-        )}
-      </div>
+      <h2>📚 Blok Okuma Egzersizi</h2>
+      <p>Kelimeleri bloklar halinde hızlıca okumaya çalış.</p>
 
       <div className="controls">
-        <label>
-          ⏱ Hız (ms):
-          <input
-            type="range"
-            min="100"
-            max="1000"
-            step="50"
-            value={speed}
-            onChange={(e) => setSpeed(Number(e.target.value))}
-          />
-          <span>{speed} ms</span>
-        </label>
-
-        <div className="buttons">
-          {!running ? (
-            <button onClick={handleStart} disabled={!selectedStory}>
-              ▶ Başla
-            </button>
-          ) : (
-            <button onClick={handleStop}>⏹ Durdur</button>
-          )}
-          <button className="exit-btn" onClick={handleExit}>
-            ❌ Çıkış
-          </button>
-        </div>
+        <label>Hız (ms):</label>
+        <input
+          type="range"
+          min="500"
+          max="4000"
+          step="100"
+          value={speed}
+          onChange={(e) => setSpeed(Number(e.target.value))}
+          disabled={running}
+        />
+        <span>{speed} ms</span>
+        <button onClick={() => setRunning(!running)}>
+          {running ? "⏸ Durdur" : "▶ Başlat"}
+        </button>
+        <button className="exit-btn" onClick={handleExit}>
+          ❌ Çıkış
+        </button>
       </div>
 
-      <div className="stats">
-        <p>Kelime Sayısı: {totalWords}</p>
-        <p>Okunan Kelime: {wordsRead}</p>
-        <p>İlerleme: %{progress}</p>
-        <div className="progress-bar">
-          <div className="progress" style={{ width: `${progress}%` }}></div>
-        </div>
+      <div className="blok-box">
+        <h3>{blocks[index]}</h3>
+      </div>
+
+      <div className="timer-box">
+        <p>⏳ Kalan Süre: {duration - time} sn</p>
       </div>
     </div>
   );
