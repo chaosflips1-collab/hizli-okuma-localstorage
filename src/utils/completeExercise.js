@@ -1,64 +1,118 @@
 // src/utils/completeExercise.js
-import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
-// 🔹 21 günlük plan sıralaması (örnek mantık)
-const plan = [
-  ["takistoskop", "kosesel", "acili"],
-  ["cifttarafliodak", "harfbulmaodakcalismasi", "odaklanma", "hafizagelistirmecalismasi"],
-  ["gozoyunu", "buyuyensekil", "genisleyenkutular"],
-  ["blokokuma", "hizliokuma"],
-];
+/**
+ * ✅ Her egzersiz tamamlandığında çağrılır.
+ * - progress koleksiyonundaki currentDay & currentExercise ilerletilir.
+ * - plan koleksiyonundan sıradaki egzersiz alınır.
+ * - Bir günün egzersizleri tamamlanınca nextAvailableDate = yarın olarak atanır.
+ * - navigate() ile otomatik geçiş yapılır.
+ */
+export default async function completeExercise(studentCode, className, navigate) {
+  try {
+    console.log(`🧩 Egzersiz tamamlandı: ${studentCode} - ${className}`);
 
-export default async function completeExercise(studentCode, navigate) {
-  if (!studentCode) {
-    console.warn("❌ Öğrenci kodu bulunamadı. Login kontrol et.");
-    return;
-  }
+    const progressRef = doc(db, "progress", studentCode);
+    const planRef = doc(db, "plans", className);
 
-  const ref = doc(db, "progress", studentCode);
-  const snap = await getDoc(ref);
+    const [progressSnap, planSnap] = await Promise.all([
+      getDoc(progressRef),
+      getDoc(planRef),
+    ]);
 
-  let currentDay = 1;
-  let completedExercises = [];
-  let lockedDays = {};
+    if (!progressSnap.exists()) {
+      console.error("⚠ progress kaydı bulunamadı!");
+      alert("İlerleme kaydı bulunamadı!");
+      navigate("/panel", { replace: true });
+      return;
+    }
 
-  if (snap.exists()) {
-    const data = snap.data();
-    currentDay = data.currentDay || 1;
-    completedExercises = data.completedExercises || [];
-    lockedDays = data.lockedDays || {};
-  } else {
-    await setDoc(ref, { currentDay: 1, completedExercises: [], lockedDays: {} });
-  }
+    if (!planSnap.exists()) {
+      console.error("⚠ plan kaydı bulunamadı!");
+      alert("Plan kaydı bulunamadı!");
+      navigate("/panel", { replace: true });
+      return;
+    }
 
-  const dayExercises = plan[(currentDay - 1) % plan.length];
-  const currentExerciseIndex = completedExercises.length;
+    const progressData = progressSnap.data();
+    const planData = planSnap.data();
 
-  // ✅ Egzersiz tamamlandı
-  const updatedExercises = [...completedExercises, dayExercises[currentExerciseIndex]];
-  await updateDoc(ref, { completedExercises: updatedExercises });
+    let { currentDay, currentExercise } = progressData;
+    const dayKey = `day${currentDay}`;
+    const exercises = planData[dayKey]?.exercises || [];
 
-  // 🔒 Gün bitti mi?
-  if (updatedExercises.length >= dayExercises.length) {
-    const nextDay = currentDay + 1;
-    lockedDays[currentDay] = true;
+    let newExercise = currentExercise + 1;
+    let newDay = currentDay;
+    let completed = false;
 
-    await updateDoc(ref, {
-      currentDay: nextDay,
-      completedExercises: [],
-      lockedDays,
-      completed: nextDay > 21,
-    });
+    // 🎯 Günün son egzersizi mi?
+    let dayCompleted = false;
+    if (newExercise >= exercises.length) {
+      newExercise = 0;
+      newDay++;
+      dayCompleted = true;
+    }
 
-    alert(`🎉 ${currentDay}. gün tamamlandı! ${nextDay <= 21 ? nextDay + ". güne geçebilirsin!" : "Tüm plan bitti!"}`);
-    setTimeout(() => navigate("/panel"), 400);
-    return;
-  }
+    // 🔚 21 günlük plan bitti mi?
+    if (newDay > Object.keys(planData).length) {
+      completed = true;
+      dayCompleted = false;
+      alert("🎉 Tebrikler! 21 günlük plan tamamlandı!");
+    }
 
-  // ➡ sıradaki egzersize yönlendir
-  const nextExercise = dayExercises[currentExerciseIndex + 1];
-  if (nextExercise) {
-    setTimeout(() => navigate(`/${nextExercise}`), 400);
+    // 🔒 Eğer gün tamamlandıysa yarın tekrar açılacak
+    let nextAvailableDate = progressData.nextAvailableDate || null;
+    if (dayCompleted) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      nextAvailableDate = tomorrow.toISOString().split("T")[0];
+    }
+
+    const updatedProgress = {
+      ...progressData,
+      currentExercise: newExercise,
+      currentDay: newDay,
+      completed,
+      lastUpdate: new Date(),
+      nextAvailableDate,
+    };
+
+    await updateDoc(progressRef, updatedProgress);
+    console.log("✅ Progress güncellendi:", updatedProgress);
+
+    if (completed) {
+      navigate("/panel", { replace: true });
+      return;
+    }
+
+    // 🚀 Sıradaki egzersizi Firestore planından bul
+    const nextDayKey = `day${updatedProgress.currentDay}`;
+    const nextExercise = planData[nextDayKey]?.exercises?.[updatedProgress.currentExercise];
+
+    if (dayCompleted) {
+      alert("✅ Bugünkü çalışmalar tamamlandı! Yarın yeni egzersizler açılacak 🎯");
+      navigate("/panel", { replace: true });
+      return;
+    }
+
+    if (nextExercise) {
+      navigate(`/${nextExercise.id}`, {
+        state: {
+          fromExercisePlayer: true,
+          studentCode,
+          className,
+          duration: nextExercise.duration,
+        },
+        replace: true,
+      });
+    } else {
+      alert("🔚 Günün egzersizleri tamamlandı!");
+      navigate("/panel", { replace: true });
+    }
+  } catch (err) {
+    console.error("🔥 completeExercise hata:", err);
+    alert("Bir hata oluştu, lütfen tekrar deneyin.");
+    navigate("/panel", { replace: true });
   }
 }

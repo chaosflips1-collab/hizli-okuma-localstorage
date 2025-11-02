@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import library from "../data/library.json";
 import { db } from "../firebase";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
-import "./Takistoskop.css";
+import "./TakistoskopFixed.css";
 
 export default function Takistoskop() {
   const navigate = useNavigate();
@@ -66,6 +66,7 @@ export default function Takistoskop() {
     setTimeout(() => setShowItem(false), speed);
   };
 
+  // ⏱ Süre takibi ve otomatik bitiş
   useEffect(() => {
     let interval;
     if (running) {
@@ -86,81 +87,82 @@ export default function Takistoskop() {
     return () => clearInterval(interval);
   }, [running, duration]);
 
+  // ✅ Egzersiz tamamlanınca sıradaki egzersize geç
   useEffect(() => {
     const finishAndGoNext = async () => {
-      if (exerciseFinished && fromExercisePlayer && studentCode && className) {
+      if (!exerciseFinished) return;
+
+      if (fromExercisePlayer && studentCode && className) {
         try {
           const progressRef = doc(db, "progress", studentCode);
-          const planRef = doc(db, "plans", className);
+          const progressSnap = await getDoc(progressRef);
 
-          const [progressSnap, planSnap] = await Promise.all([
-            getDoc(progressRef),
-            getDoc(planRef),
-          ]);
+          if (!progressSnap.exists()) {
+            alert("Öğrenci ilerlemesi bulunamadı, panel'e dönülüyor.");
+            return navigate("/panel", { replace: true });
+          }
 
-          if (progressSnap.exists() && planSnap.exists()) {
-            const progressData = progressSnap.data();
-            const planData = planSnap.data();
+          const progressData = progressSnap.data();
+          let { currentDay, currentExercise, plan } = progressData;
 
-            let { currentDay, currentExercise } = progressData;
-            const dayKey = `day${currentDay}`;
-            const exercises = planData[dayKey]?.exercises || [];
+          const dayKey = `day${currentDay}`;
+          const exercises = plan?.[dayKey] || [];
 
-            let newExercise = currentExercise + 1;
-            let newDay = currentDay;
-            let completed = false;
+          let newExercise = (currentExercise || 0) + 1;
+          let newDay = currentDay;
+          let completed = false;
 
-            if (newExercise >= exercises.length) {
-              newExercise = 0;
-              newDay++;
-              if (newDay > Object.keys(planData).length) {
-                completed = true;
-                alert("🎉 Tebrikler! 21 günlük plan tamamlandı!");
-              }
-            }
-
-            const updatedProgress = {
-              ...progressData,
-              currentExercise: newExercise,
-              currentDay: newDay,
-              completed,
-              lastUpdate: new Date(),
-            };
-
-            await updateDoc(progressRef, updatedProgress);
-            alert("✅ Egzersiz tamamlandı, sıradaki egzersize geçiliyor...");
-
-            // 👉 Firestore kaydından sıradaki egzersizi al
-            const nextDayKey = `day${updatedProgress.currentDay}`;
-            const nextExercise =
-              planData[nextDayKey]?.exercises?.[updatedProgress.currentExercise];
-
-            if (nextExercise) {
-              navigate(`/${nextExercise.id}`, {
-                state: {
-                  fromExercisePlayer: true,
-                  studentCode,
-                  className,
-                  duration: nextExercise.duration,
-                },
-                replace: true,
-              });
-            } else {
-              navigate("/panel", { replace: true });
+          if (newExercise >= exercises.length) {
+            newExercise = 0;
+            newDay++;
+            if (newDay > 21) {
+              completed = true;
+              alert("🎉 Tebrikler! 21 günlük planı tamamladınız!");
             }
           }
+
+          const updatedData = {
+            ...progressData,
+            currentDay: newDay,
+            currentExercise: newExercise,
+            completed,
+            lastUpdate: new Date(),
+          };
+
+          await updateDoc(progressRef, updatedData);
+
+          // sıradaki egzersizi al
+          const nextDayKey = `day${updatedData.currentDay}`;
+          const nextExercise =
+            updatedData.plan?.[nextDayKey]?.[updatedData.currentExercise];
+
+          if (nextExercise && !completed) {
+            alert("✅ Egzersiz tamamlandı, sıradaki çalışmaya geçiliyor...");
+            navigate(`/${nextExercise.id}`, {
+              state: {
+                fromExercisePlayer: true,
+                studentCode,
+                className,
+                duration: nextExercise.duration,
+              },
+              replace: true,
+            });
+          } else {
+            alert("🎯 Bugünkü egzersizler tamamlandı!");
+            navigate("/panel", { replace: true });
+          }
         } catch (err) {
-          console.error("🔥 Plan ilerletme hatası:", err);
-          alert("Bir hata oluştu, lütfen tekrar deneyin.");
+          console.error("🔥 İlerleme güncelleme hatası:", err);
+          alert("Bir hata oluştu, panel'e yönlendiriliyorsunuz.");
           navigate("/panel", { replace: true });
         }
-      } else if (exerciseFinished) {
-        alert("Bugünkü Takistoskop egzersizi sona erdi!");
+      } else {
+        alert("🎯 Egzersiz tamamlandı!");
         navigate("/panel", { replace: true });
       }
     };
 
-    if (exerciseFinished) finishAndGoNext();
+    finishAndGoNext();
   }, [exerciseFinished, fromExercisePlayer, studentCode, className, navigate]);
 
   const exitExercise = () => {
@@ -214,6 +216,7 @@ export default function Takistoskop() {
         </div>
       </div>
 
+      {/* ⚙️ Ayarlar */}
       <div className="settings-wrapper">
         <div
           className="settings-header"

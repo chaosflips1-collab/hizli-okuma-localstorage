@@ -1,4 +1,4 @@
-// src/App.js
+// src/App.jsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
@@ -8,6 +8,7 @@ import Panel from "./components/Panel";
 import Kategori from "./components/Kategori";
 import AdminLogin from "./components/AdminLogin";
 import AdminPanel from "./components/AdminPanel";
+import AddStudent from "./components/AddStudent";
 
 // ✅ Egzersizler
 import Takistoskop from "./components/Takistoskop";
@@ -39,16 +40,15 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Öğrenci */}
         <Route path="/" element={<Login />} />
         <Route path="/panel" element={<PrivateRoute element={<Panel />} />} />
         <Route path="/kategori/:id" element={<PrivateRoute element={<Kategori />} />} />
 
-        {/* Admin */}
+        {/* 🔹 Admin */}
         <Route path="/admin" element={<AdminLogin />} />
-        <Route path="/adminpanel" element={<AdminPrivateRoute element={<AdminPanel />} />} />
+        <Route path="/admin/panel" element={<AdminPrivateRoute element={<AdminPanel />} />} />
 
-        {/* Egzersizler */}
+        {/* 🔹 Egzersizler */}
         <Route path="/takistoskop" element={<PrivateRoute element={<Takistoskop />} />} />
         <Route path="/kosesel" element={<PrivateRoute element={<Kosesel />} />} />
         <Route path="/acili" element={<PrivateRoute element={<Acili />} />} />
@@ -61,6 +61,9 @@ function App() {
         <Route path="/genisleyenkutular" element={<PrivateRoute element={<Genisleyenkutular />} />} />
         <Route path="/hizliokuma" element={<PrivateRoute element={<HizliOkuma />} />} />
         <Route path="/blokokuma" element={<PrivateRoute element={<BlokOkuma />} />} />
+
+        <Route path="/addstudent" element={<AddStudent />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );

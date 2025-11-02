@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import library from "../data/library.json";
-import completeExercise from "../utils/completeExercise"; // ✅ yeni eklendi
+import { db } from "../firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import "./Kosesel.css";
 
 export default function Kosesel() {
   const navigate = useNavigate();
-
   const student = JSON.parse(localStorage.getItem("activeStudent") || "{}");
 
   const [bgColor, setBgColor] = useState("#ffffff");
@@ -43,20 +43,81 @@ export default function Kosesel() {
           if (newTime >= 180) {
             clearInterval(interval);
             setRunning(false);
-            alert("Köşesel Egzersiz tamamlandı!");
-
-            // ✅ Firestore progress güncelle
-            completeExercise(student.kod, student.sinif, navigate);
-
-            return prev;
+            setTimeout(() => handleExerciseComplete(), 500);
           }
-
           return newTime;
         });
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [running, navigate]);
+  }, [running]);
+
+  // ✅ Egzersiz bitince sıradaki egzersize geç
+  const handleExerciseComplete = async () => {
+    alert("🎯 Köşesel Egzersiz tamamlandı!");
+
+    try {
+      const progressRef = doc(db, "progress", student.kod);
+      const progressSnap = await getDoc(progressRef);
+
+      if (!progressSnap.exists()) {
+        alert("İlerleme verisi bulunamadı!");
+        return navigate("/panel");
+      }
+
+      const progressData = progressSnap.data();
+      let { currentDay, currentExercise, plan } = progressData;
+      const dayKey = `day${currentDay}`;
+      const exercises = plan?.[dayKey] || [];
+
+      let newExercise = (currentExercise || 0) + 1;
+      let newDay = currentDay;
+      let completed = false;
+
+      if (newExercise >= exercises.length) {
+        newExercise = 0;
+        newDay++;
+        if (newDay > 21) {
+          completed = true;
+          alert("🎉 Tebrikler! 21 günlük plan tamamlandı!");
+        }
+      }
+
+      const updatedProgress = {
+        ...progressData,
+        currentDay: newDay,
+        currentExercise: newExercise,
+        completed,
+        lastUpdate: new Date(),
+      };
+
+      await updateDoc(progressRef, updatedProgress);
+
+      // sıradaki egzersizi bul
+      const nextDayKey = `day${updatedProgress.currentDay}`;
+      const nextExercise =
+        updatedProgress.plan?.[nextDayKey]?.[updatedProgress.currentExercise];
+
+      if (nextExercise && !completed) {
+        alert("✅ Sıradaki egzersize geçiliyor...");
+        navigate(`/${nextExercise.id}`, {
+          state: {
+            fromExercisePlayer: true,
+            studentCode: student.kod,
+            className: student.sinif,
+            duration: nextExercise.duration,
+          },
+          replace: true,
+        });
+      } else {
+        navigate("/panel", { replace: true });
+      }
+    } catch (err) {
+      console.error("🔥 Plan ilerletme hatası:", err);
+      alert("Bir hata oluştu, panel'e dönülüyor.");
+      navigate("/panel", { replace: true });
+    }
+  };
 
   const exitExercise = () => {
     setRunning(false);

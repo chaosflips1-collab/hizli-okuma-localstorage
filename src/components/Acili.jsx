@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import library from "../data/library.json";
-import completeExercise from "../utils/completeExercise"; // ✅ yeni
+import { db } from "../firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import "./Acili.css";
 
 export default function Acili() {
@@ -28,13 +29,16 @@ export default function Acili() {
     return arr;
   };
 
+  // 🔹 Başlat
   const startExercise = () => {
     setRunning(true);
     setTime(0);
     setPhase("down");
     setLetters(generateLetters());
+    localStorage.setItem("activeExercise", "acili");
   };
 
+  // 🔹 Süre takibi
   useEffect(() => {
     let timer;
     if (running) {
@@ -57,15 +61,11 @@ export default function Acili() {
             setLetters(generateLetters());
           }
 
+          // ✅ Egzersiz bittiğinde sıradaki çalışmaya geç
           if (newTime >= 180) {
             clearInterval(timer);
             setRunning(false);
-            alert("📐 Açılı Okuma Egzersizi tamamlandı!");
-
-            // ✅ Firestore ilerleme güncellemesi
-            completeExercise(student.kod, student.sinif, navigate);
-
-            return prev;
+            setTimeout(() => handleExerciseComplete(), 500);
           }
 
           return newTime;
@@ -73,14 +73,103 @@ export default function Acili() {
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [running, navigate]);
+  }, [running]);
 
+  // ✅ Egzersiz tamamlanınca sıradaki egzersizi bul
+  const handleExerciseComplete = async () => {
+    alert("📐 Açılı Okuma Egzersizi tamamlandı!");
+
+    try {
+      const progressRef = doc(db, "progress", student.kod);
+      const progressSnap = await getDoc(progressRef);
+
+      if (!progressSnap.exists()) {
+        alert("İlerleme verisi bulunamadı!");
+        return navigate("/panel");
+      }
+
+      const progressData = progressSnap.data();
+      let { currentDay, currentExercise, plan } = progressData;
+      const dayKey = `day${currentDay}`;
+      const exercises = plan?.[dayKey] || [];
+
+      let newExercise = (currentExercise || 0) + 1;
+      let newDay = currentDay;
+      let completed = false;
+
+      if (newExercise >= exercises.length) {
+        newExercise = 0;
+        newDay++;
+        if (newDay > 21) {
+          completed = true;
+          alert("🎉 Tebrikler! 21 günlük plan tamamlandı!");
+        }
+      }
+
+      const updatedProgress = {
+        ...progressData,
+        currentDay: newDay,
+        currentExercise: newExercise,
+        completed,
+        lastUpdate: new Date(),
+      };
+
+      await updateDoc(progressRef, updatedProgress);
+
+      // sıradaki egzersizi bul
+      const nextDayKey = `day${updatedProgress.currentDay}`;
+      const nextExercise =
+        updatedProgress.plan?.[nextDayKey]?.[updatedProgress.currentExercise];
+
+      if (nextExercise && !completed) {
+        alert("✅ Sıradaki egzersize geçiliyor...");
+        navigate(`/${nextExercise.id}`, {
+          state: {
+            fromExercisePlayer: true,
+            studentCode: student.kod,
+            className: student.sinif,
+            duration: nextExercise.duration,
+          },
+          replace: true,
+        });
+      } else {
+        navigate("/panel", { replace: true });
+      }
+    } catch (err) {
+      console.error("🔥 Plan ilerletme hatası:", err);
+      alert("Bir hata oluştu, panel'e dönülüyor.");
+      navigate("/panel", { replace: true });
+    } finally {
+      localStorage.removeItem("activeExercise");
+    }
+  };
+
+  // 🔹 Egzersizden çıkış
   const exitExercise = () => {
+    if (running) {
+      const confirmExit = window.confirm(
+        "⚠️ Egzersiz devam ediyor. Çıkarsan tamamlanmış sayılmaz. Emin misin?"
+      );
+      if (!confirmExit) return;
+    }
     setRunning(false);
     setLetters([]);
+    localStorage.removeItem("activeExercise");
     alert("Egzersizden çıkış yapıldı.");
     navigate("/panel");
   };
+
+  // 🔹 Sekme kapanırsa kayıt temizle
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (localStorage.getItem("activeExercise") === "acili") {
+        localStorage.removeItem("activeExercise");
+        console.log("⚠️ Egzersiz yarım bırakıldı, kayıt edilmedi.");
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   const getLetterStyle = (index) => {
     const baseX = (index % 10) * 40 + 20;

@@ -1,6 +1,4 @@
-// src/components/AdminPanel.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 import {
   collection,
@@ -8,146 +6,88 @@ import {
   addDoc,
   deleteDoc,
   doc,
-  getDoc,
-  setDoc,
 } from "firebase/firestore";
 import "./AdminPanel.css";
 
 export default function AdminPanel() {
   const [students, setStudents] = useState([]);
-  const [progressData, setProgressData] = useState([]);
+  const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [authorized, setAuthorized] = useState(false);
-  const [password, setPassword] = useState("");
-  const [lastLogin, setLastLogin] = useState(null);
-  const [firestorePassword, setFirestorePassword] = useState(null);
   const [form, setForm] = useState({ kod: "", ad: "", soyad: "", sinif: "" });
-  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    ongoing: 0,
+    averageProgress: 0,
+  });
 
-  // 🔹 Firestore'dan admin bilgilerini çek
-  useEffect(() => {
-    const fetchAdminData = async () => {
-      try {
-        const adminRef = doc(db, "admins", "mainAdmin");
-        const snap = await getDoc(adminRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          setFirestorePassword(data.password);
+  // 🔹 Bugünün tarihi
+  const today = new Date().toLocaleDateString("tr-TR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 
-          let formattedDate = null;
-          if (data.lastLogin) {
-            if (typeof data.lastLogin === "string") {
-              formattedDate = data.lastLogin;
-            } else if (data.lastLogin.toDate) {
-              const date = data.lastLogin.toDate();
-              formattedDate = date
-                .toLocaleString("tr-TR", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })
-                .replace(",", "");
-            }
-          }
-          setLastLogin(formattedDate);
-        }
-      } catch (err) {
-        console.error("Admin bilgisi alınamadı:", err);
-      }
-    };
+  // 🔁 Firestore verilerini çek (yenileme için ayrı fonksiyon)
+  const fetchAll = async () => {
+    setLoading(true);
+    try {
+      const studentsSnap = await getDocs(collection(db, "students"));
+      const studentsList = studentsSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+      setStudents(studentsList);
 
-    fetchAdminData();
-  }, []);
+      const progressSnap = await getDocs(collection(db, "progress"));
+      const progressList = progressSnap.docs.map((d) => d.data());
+      setProgress(progressList);
 
-  // 🔐 Admin girişi
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    if (password === firestorePassword) {
-      const now = new Date();
-      const formatted = now.toLocaleString("tr-TR");
+      // 🔹 İstatistik hesapla
+      const total = studentsList.length;
+      const ongoing = progressList.filter((p) => p.status === "Devam Ediyor").length;
+      const active = progressList.filter((p) => p.day > 0).length;
+      const avg =
+        progressList.length > 0
+          ? (
+              progressList.reduce((acc, p) => acc + (p.day || 0), 0) /
+              progressList.length
+            ).toFixed(1)
+          : 0;
 
-      try {
-        await setDoc(
-          doc(db, "admins", "mainAdmin"),
-          {
-            username: "admin",
-            password: firestorePassword,
-            lastLogin: formatted,
-          },
-          { merge: true }
-        );
-
-        setAuthorized(true);
-        setLastLogin(formatted);
-        localStorage.setItem("adminAuth", "true");
-      } catch (err) {
-        console.error("Admin login güncellenemedi:", err);
-      }
-    } else {
-      alert("❌ Yanlış şifre!");
+      setStats({
+        total,
+        active,
+        ongoing,
+        averageProgress: avg,
+      });
+    } catch (err) {
+      console.error("🔥 Firestore veri çekme hatası:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // 🚪 Çıkış yap
-  const handleLogout = () => {
-    localStorage.removeItem("adminAuth");
-    setAuthorized(false);
-    navigate("/admin", { replace: true });
-  };
-
-  // 🔄 Öğrenci verilerini Firestore'dan çek
   useEffect(() => {
-    if (!authorized) return;
-    const fetchStudents = async () => {
-      try {
-        const snap = await getDocs(collection(db, "students"));
-        const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setStudents(list);
-      } catch (err) {
-        console.error("Veri çekme hatası:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStudents();
-  }, [authorized]);
+    fetchAll();
+  }, []);
 
-  // 🔄 Öğrenci ilerlemelerini çek
-  useEffect(() => {
-    if (!authorized) return;
-    const fetchProgress = async () => {
-      try {
-        const snap = await getDocs(collection(db, "progress"));
-        const list = snap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setProgressData(list);
-      } catch (err) {
-        console.error("İlerleme verisi alınamadı:", err);
-      }
-    };
-    fetchProgress();
-  }, [authorized]);
-
-  // ✅ Yeni öğrenci ekle
+  // ➕ Yeni öğrenci ekleme
   const handleAdd = async (e) => {
     e.preventDefault();
+    if (!form.kod || !form.ad || !form.soyad || !form.sinif)
+      return alert("⚠️ Lütfen tüm alanları doldurun!");
     try {
       await addDoc(collection(db, "students"), form);
       setForm({ kod: "", ad: "", soyad: "", sinif: "" });
       alert("✅ Öğrenci başarıyla eklendi!");
-      window.location.reload();
+      fetchAll();
     } catch (err) {
       console.error("Ekleme hatası:", err);
-      alert("⚠️ Firestore’a ekleme yapılamadı!");
     }
   };
 
-  // ❌ Öğrenci sil
+  // ❌ Öğrenci silme
   const handleDelete = async (id) => {
     if (!window.confirm("Bu öğrenciyi silmek istediğine emin misin?")) return;
     try {
@@ -158,63 +98,72 @@ export default function AdminPanel() {
     }
   };
 
-  if (!authorized) {
-    return (
-      <div className="admin-login-screen">
-        <form className="admin-login-card" onSubmit={handlePasswordSubmit}>
-          <h2>🔒 Admin Girişi</h2>
-          <p className="login-subtext">Yönetici erişimi için şifrenizi girin</p>
-
-          <input
-            type="password"
-            placeholder="Şifre"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-
-          <button type="submit">🚀 Giriş Yap</button>
-
-          {lastLogin && (
-            <p className="last-login">
-              🕒 Son Giriş: <b>{lastLogin}</b>
-            </p>
-          )}
-        </form>
-      </div>
-    );
-  }
-
-  // 🎓 Admin paneli
   return (
     <div className="admin-panel-container">
       <div className="admin-header">
-        <h1>⚙️ Admin Panel</h1>
-        <div className="header-right">
-          {lastLogin && <p>🕒 Son Giriş: {lastLogin}</p>}
-          <button onClick={handleLogout} className="logout-btn">
-            🚪 Çıkış Yap
-          </button>
+        <h1>📊 İstatistik Özeti — {today}</h1>
+        <button onClick={fetchAll} className="refresh-btn">
+          🔄 Yenile
+        </button>
+      </div>
+
+      {/* 📊 İstatistik kutuları */}
+      <div className="stat-cards">
+        <div className="stat-card total">
+          <h3>👥 Toplam Öğrenci</h3>
+          <p>{stats.total}</p>
+        </div>
+        <div className="stat-card active">
+          <h3>🔥 Aktif Öğrenciler</h3>
+          <p>{stats.active}</p>
+        </div>
+        <div className="stat-card ongoing">
+          <h3>📚 Devam Edenler</h3>
+          <p>{stats.ongoing}</p>
+        </div>
+        <div className="stat-card avg">
+          <h3>📈 Ortalama Gün</h3>
+          <p>{stats.averageProgress}</p>
         </div>
       </div>
 
       {/* 🧩 Yeni öğrenci ekleme */}
-      <section className="admin-section">
+      <div className="admin-section">
         <h2>➕ Yeni Öğrenci Ekle</h2>
-        <form className="admin-actions" onSubmit={handleAdd}>
-          <input type="text" placeholder="Kod" value={form.kod} onChange={(e) => setForm({ ...form, kod: e.target.value })} required />
-          <input type="text" placeholder="Ad" value={form.ad} onChange={(e) => setForm({ ...form, ad: e.target.value })} required />
-          <input type="text" placeholder="Soyad" value={form.soyad} onChange={(e) => setForm({ ...form, soyad: e.target.value })} required />
-          <input type="text" placeholder="Sınıf" value={form.sinif} onChange={(e) => setForm({ ...form, sinif: e.target.value })} required />
+        <form onSubmit={handleAdd} className="admin-actions">
+          <input
+            type="text"
+            placeholder="Kod"
+            value={form.kod}
+            onChange={(e) => setForm({ ...form, kod: e.target.value })}
+          />
+          <input
+            type="text"
+            placeholder="Ad"
+            value={form.ad}
+            onChange={(e) => setForm({ ...form, ad: e.target.value })}
+          />
+          <input
+            type="text"
+            placeholder="Soyad"
+            value={form.soyad}
+            onChange={(e) => setForm({ ...form, soyad: e.target.value })}
+          />
+          <input
+            type="text"
+            placeholder="Sınıf"
+            value={form.sinif}
+            onChange={(e) => setForm({ ...form, sinif: e.target.value })}
+          />
           <button type="submit">💾 Kaydet</button>
         </form>
-      </section>
+      </div>
 
-      {/* 🧠 Öğrenci İlerleme Takibi */}
-      <section className="admin-section">
-        <h2>📊 Öğrenci İlerleme Takibi</h2>
-        {progressData.length === 0 ? (
-          <p>⏳ Henüz ilerleme kaydı yok</p>
+      {/* 📘 Öğrenci ilerleme tablosu */}
+      <div className="admin-section">
+        <h2>📘 Öğrenci İlerleme Takibi</h2>
+        {loading ? (
+          <p>⏳ Veriler yükleniyor...</p>
         ) : (
           <table>
             <thead>
@@ -228,54 +177,51 @@ export default function AdminPanel() {
               </tr>
             </thead>
             <tbody>
-              {progressData.map((p) => {
-                const studentInfo = students.find((s) => s.kod === p.id);
-                return (
-                  <tr key={p.id}>
-                    <td>{studentInfo ? `${studentInfo.ad} ${studentInfo.soyad}` : "—"}</td>
-                    <td>{studentInfo ? studentInfo.sinif : "—"}</td>
-                    <td>{p.currentDay || 0}</td>
-                    <td>{p.currentExercise !== undefined ? p.currentExercise + 1 : "—"}</td>
-                    <td>{p.completed ? "✅ Tamamlandı" : "🕓 Devam Ediyor"}</td>
-                    <td>{p.lastUpdate ? new Date(p.lastUpdate.seconds * 1000).toLocaleString("tr-TR") : "—"}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </section>
-
-      {/* 📋 Öğrenci Listesi */}
-      <section className="admin-section">
-        <div className="section-header">
-          <h2>📋 Öğrenci Listesi</h2>
-        </div>
-        {loading ? (
-          <p>⏳ Yükleniyor...</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Kod</th>
-                <th>Ad Soyad</th>
-                <th>Sınıf</th>
-                <th>Sil</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.kod}</td>
-                  <td>{s.ad} {s.soyad}</td>
-                  <td>{s.sinif}</td>
-                  <td><button className="delete-btn" onClick={() => handleDelete(s.id)}>❌</button></td>
+              {progress.map((p, i) => (
+                <tr key={i}>
+                  <td>{p.name}</td>
+                  <td>{p.class}</td>
+                  <td>{p.day || "-"}</td>
+                  <td>{p.exercise || "-"}</td>
+                  <td>{p.status}</td>
+                  <td>{p.updatedAt || "-"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
-      </section>
+      </div>
+
+      {/* 📄 Öğrenci listesi */}
+      <div className="admin-section">
+        <h2>📄 Öğrenci Listesi</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Kod</th>
+              <th>Ad Soyad</th>
+              <th>Sınıf</th>
+              <th>Sil</th>
+            </tr>
+          </thead>
+          <tbody>
+            {students.map((s) => (
+              <tr key={s.id}>
+                <td>{s.kod}</td>
+                <td>
+                  {s.ad} {s.soyad}
+                </td>
+                <td>{s.sinif}</td>
+                <td>
+                  <button className="delete-btn" onClick={() => handleDelete(s.id)}>
+                    ❌
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

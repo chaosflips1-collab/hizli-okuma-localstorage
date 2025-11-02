@@ -4,6 +4,11 @@ import { db } from "../firebase";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import "./AdminLogin.css";
 
+// ⚙️ Gerekli bileşenleri doğru import et (relative path hatası düzeltildi)
+import Login from "./Login";
+import Panel from "./Panel";
+import Kategori from "./Kategori";
+
 export default function AdminLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -11,6 +16,7 @@ export default function AdminLogin() {
   const [lastLogin, setLastLogin] = useState("");
   const navigate = useNavigate();
 
+  // 🔹 Firestore'dan admin bilgilerini çek
   useEffect(() => {
     const fetchAdmin = async () => {
       try {
@@ -26,6 +32,7 @@ export default function AdminLogin() {
     fetchAdmin();
   }, []);
 
+  // 🔐 Giriş işlemi
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -40,6 +47,7 @@ export default function AdminLogin() {
       }
 
       const adminData = snap.data();
+
       if (adminData.username === username && adminData.password === password) {
         await updateDoc(ref, {
           lastLogin: new Date().toLocaleString("tr-TR"),
@@ -48,7 +56,9 @@ export default function AdminLogin() {
 
         localStorage.setItem("adminAuth", "true");
         localStorage.setItem("adminUser", username);
-        navigate("/adminpanel", { replace: true }); // 🔥 DÜZELTİLDİ
+
+        // ✅ Admin girişinden sonra yönlendirme
+        navigate("/admin/panel", { replace: true });
       } else {
         setError("❌ Kullanıcı adı veya şifre yanlış!");
       }
