@@ -1,13 +1,22 @@
-import React, { useState, useEffect } from "react";
+// src/components/Acili.jsx
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import library from "../data/library.json";
-import { db } from "../firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import completeExercise from "../utils/completeExercise";
 import "./Acili.css";
 
 export default function Acili() {
   const navigate = useNavigate();
-  const student = JSON.parse(localStorage.getItem("activeStudent") || "{}");
+
+  // ✅ aktif öğrenci (güvenli JSON.parse)
+  const student = useMemo(() => {
+    try {
+      const raw = localStorage.getItem("activeStudent");
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }, []);
 
   const [bgColor, setBgColor] = useState("#ffffff");
   const [font, setFont] = useState("Arial");
@@ -18,11 +27,12 @@ export default function Acili() {
   const [phase, setPhase] = useState("down");
   const [letters, setLetters] = useState([]);
   const [speed, setSpeed] = useState(1000);
+  const [finishing, setFinishing] = useState(false); // çifte çağrıyı önlemek için
 
   const pool = library.letters || [];
 
   const generateLetters = () => {
-    let arr = [];
+    const arr = [];
     for (let i = 0; i < 10; i++) {
       arr.push(pool[Math.floor(Math.random() * pool.length)]);
     }
@@ -38,111 +48,61 @@ export default function Acili() {
     localStorage.setItem("activeExercise", "acili");
   };
 
-  // 🔹 Süre takibi
-  useEffect(() => {
-    let timer;
-    if (running) {
-      timer = setInterval(() => {
-        setTime((prev) => {
-          const newTime = prev + 1;
-
-          if (newTime <= 60) setSpeed(1000);
-          else if (newTime <= 120) setSpeed(700);
-          else setSpeed(500);
-
-          if (newTime % 3 === 0) {
-            setPhase((prevPhase) =>
-              prevPhase === "down"
-                ? "inward"
-                : prevPhase === "inward"
-                ? "outward"
-                : "down"
-            );
-            setLetters(generateLetters());
-          }
-
-          // ✅ Egzersiz bittiğinde sıradaki çalışmaya geç
-          if (newTime >= 180) {
-            clearInterval(timer);
-            setRunning(false);
-            setTimeout(() => handleExerciseComplete(), 500);
-          }
-
-          return newTime;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [running]);
-
-  // ✅ Egzersiz tamamlanınca sıradaki egzersizi bul
+  // ✅ Egzersiz tamamlandığında tek noktadan tamamla (erken bitirme yok!)
   const handleExerciseComplete = async () => {
-    alert("📐 Açılı Okuma Egzersizi tamamlandı!");
-
+    if (finishing) return; // iki kez tetiklenmesin
+    setFinishing(true);
     try {
-      const progressRef = doc(db, "progress", student.kod);
-      const progressSnap = await getDoc(progressRef);
-
-      if (!progressSnap.exists()) {
-        alert("İlerleme verisi bulunamadı!");
-        return navigate("/panel");
-      }
-
-      const progressData = progressSnap.data();
-      let { currentDay, currentExercise, plan } = progressData;
-      const dayKey = `day${currentDay}`;
-      const exercises = plan?.[dayKey] || [];
-
-      let newExercise = (currentExercise || 0) + 1;
-      let newDay = currentDay;
-      let completed = false;
-
-      if (newExercise >= exercises.length) {
-        newExercise = 0;
-        newDay++;
-        if (newDay > 21) {
-          completed = true;
-          alert("🎉 Tebrikler! 21 günlük plan tamamlandı!");
-        }
-      }
-
-      const updatedProgress = {
-        ...progressData,
-        currentDay: newDay,
-        currentExercise: newExercise,
-        completed,
-        lastUpdate: new Date(),
-      };
-
-      await updateDoc(progressRef, updatedProgress);
-
-      // sıradaki egzersizi bul
-      const nextDayKey = `day${updatedProgress.currentDay}`;
-      const nextExercise =
-        updatedProgress.plan?.[nextDayKey]?.[updatedProgress.currentExercise];
-
-      if (nextExercise && !completed) {
-        alert("✅ Sıradaki egzersize geçiliyor...");
-        navigate(`/${nextExercise.id}`, {
-          state: {
-            fromExercisePlayer: true,
-            studentCode: student.kod,
-            className: student.sinif,
-            duration: nextExercise.duration,
-          },
-          replace: true,
-        });
-      } else {
-        navigate("/panel", { replace: true });
-      }
+      alert("📐 Açılı Okuma Egzersizi tamamlandı!");
+      await completeExercise(student.kod, student.sinif, navigate);
     } catch (err) {
-      console.error("🔥 Plan ilerletme hatası:", err);
-      alert("Bir hata oluştu, panel'e dönülüyor.");
+      console.error("🔥 completeExercise hata:", err);
+      alert("Bir hata oluştu, panel’e dönülüyor.");
       navigate("/panel", { replace: true });
     } finally {
       localStorage.removeItem("activeExercise");
+      setRunning(false);
+      setFinishing(false);
     }
   };
+
+  // 🔹 Süre takibi (180 sn dolunca otomatik tamamlama)
+  useEffect(() => {
+    if (!running) return;
+    let timer = setInterval(() => {
+      setTime((prev) => {
+        const newTime = prev + 1;
+
+        // hız kademeleri
+        if (newTime <= 60) setSpeed(1000);
+        else if (newTime <= 120) setSpeed(700);
+        else setSpeed(500);
+
+        // faz değişimi ve yeni harfler
+        if (newTime % 3 === 0) {
+          setPhase((prevPhase) =>
+            prevPhase === "down"
+              ? "inward"
+              : prevPhase === "inward"
+              ? "outward"
+              : "down"
+          );
+          setLetters(generateLetters());
+        }
+
+        // ⏱ 180sn → otomatik bitir (erken bitirme yok)
+        if (newTime >= 180) {
+          clearInterval(timer);
+          setRunning(false);
+          setTimeout(() => handleExerciseComplete(), 300);
+        }
+
+        return newTime;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [running]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 🔹 Egzersizden çıkış
   const exitExercise = () => {
@@ -159,7 +119,7 @@ export default function Acili() {
     navigate("/panel");
   };
 
-  // 🔹 Sekme kapanırsa kayıt temizle
+  // 🔹 Sekme kapanırsa kayıt temizle (yarım bırakıldı)
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (localStorage.getItem("activeExercise") === "acili") {
@@ -207,7 +167,7 @@ export default function Acili() {
 
       <div className="success-box">
         <h4>📊 Başarı Tablosu</h4>
-        <p>⏳ Kalan Süre: {180 - time} sn</p>
+        <p>⏳ Kalan Süre: {Math.max(0, 180 - time)} sn</p>
         <p>⚡ Hız: {speed} ms</p>
       </div>
 
@@ -279,6 +239,7 @@ export default function Acili() {
           ❌ Çıkış
         </button>
       </div>
+      {/* Erken bitirme butonu kaldırıldı — plan akışı korunuyor */}
     </div>
   );
 }

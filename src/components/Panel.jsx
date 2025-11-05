@@ -35,7 +35,9 @@ export default function Panel() {
         localStorage.setItem("activeStudent", JSON.stringify(activeStudent));
       } else {
         const saved = localStorage.getItem("activeStudent");
-        if (saved) activeStudent = JSON.parse(saved);
+        if (saved) {
+          try { activeStudent = JSON.parse(saved); } catch { activeStudent = null; }
+        }
       }
 
       if (!activeStudent) {
@@ -44,68 +46,50 @@ export default function Panel() {
       }
 
       try {
-        const q = query(
-          collection(db, "students"),
-          where("kod", "==", activeStudent.kod)
-        );
+        // öğrenci dokümanı
+        const q = query(collection(db, "students"), where("kod", "==", activeStudent.kod));
         const snap = await getDocs(q);
         const docData = !snap.empty ? snap.docs[0].data() : activeStudent;
         setStudent(docData);
 
+        // progress
         const progressRef = doc(db, "progress", activeStudent.kod);
         const progressSnap = await getDoc(progressRef);
 
         if (!progressSnap.exists()) {
-          const generatedPlan = {};
-          const allDays = [
-            ["takistoskop", "kosesel", "acili"],
-            [
-              "cifttarafliodak",
-              "harfbulmaodakcalismasi",
-              "odaklanma",
-              "hafizagelistirmecalismasi",
-            ],
-            ["gozoyunu", "buyuyensekil", "genisleyenkutular"],
-            ["blokokuma", "hizliokuma"],
-          ];
-
-          for (let i = 1; i <= 21; i++) {
-            const set = allDays[(i - 1) % 4];
-            generatedPlan[`day${i}`] = set.map((id) => ({ id, duration: 240 }));
-          }
-
+          // ✅ completeExercise.js ile uyumlu minimal şema
           const newProgress = {
-            startDate: serverTimestamp(),
             currentDay: 1,
+            currentExercise: 0,  // index
+            completed: false,
+            lastUpdate: serverTimestamp(),
+            nextAvailableDate: null,
+            // opsiyonel alanlar:
             streak: 0,
             completedDays: [],
             completedExercises: [],
-            currentExercise: null,
-            plan: generatedPlan,
-            lastUpdate: serverTimestamp(),
-            nextAvailableDate: null,
           };
 
           await setDoc(progressRef, newProgress);
           setProgress(newProgress);
+          setCompletedExercises(newProgress.completedExercises);
         } else {
-          setProgress(progressSnap.data());
-          setCompletedExercises(progressSnap.data().completedExercises || []);
+          const data = progressSnap.data();
+          setProgress(data);
+          setCompletedExercises(data.completedExercises || []);
         }
       } catch (err) {
         console.error("❌ Firestore hata:", err);
-        setStudent(activeStudent);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     fetchStudent();
   }, [studentFromLogin, navigate]);
 
   const today = new Date().toISOString().split("T")[0];
-  const isLocked =
-    progress?.nextAvailableDate && today < progress.nextAvailableDate;
+  const isLocked = progress?.nextAvailableDate && today < progress.nextAvailableDate;
 
   useEffect(() => {
     if (!isLocked || !progress?.nextAvailableDate) {
@@ -132,17 +116,18 @@ export default function Panel() {
     return () => clearInterval(interval);
   }, [progress?.nextAvailableDate, isLocked]);
 
+  // ✅ Sadece yönlendiriyoruz. currentExercise alanını burada KESİNLİKLE yazmıyoruz.
   const handleExerciseStart = async (id) => {
     if (isLocked) {
       alert("🔒 Bugünkü çalışmaları tamamladın. Yarın tekrar gel 💪");
       return;
     }
-
-    const progressRef = doc(db, "progress", student.kod);
-    await updateDoc(progressRef, {
-      currentExercise: id,
-      lastUpdate: serverTimestamp(),
-    });
+    try {
+      const progressRef = doc(db, "progress", student.kod);
+      await updateDoc(progressRef, { lastUpdate: serverTimestamp() });
+    } catch (e) {
+      console.warn("progress.lastUpdate güncellenemedi (devam ediyoruz):", e);
+    }
     navigate(`/${id}`);
   };
 
@@ -151,16 +136,12 @@ export default function Panel() {
     navigate("/");
   };
 
-  if (loading)
-    return (
-      <p style={{ textAlign: "center", marginTop: "50px" }}>⏳ Yükleniyor...</p>
-    );
-
+  if (loading) {
+    return <p style={{ textAlign: "center", marginTop: "50px" }}>⏳ Yükleniyor...</p>;
+  }
   if (!student || !progress) return null;
 
-  const progressPercent = ((progress.completedDays?.length / 21) * 100).toFixed(
-    0
-  );
+  const progressPercent = ((progress.completedDays?.length / 21) * 100).toFixed(0);
 
   const categories = [
     {
@@ -220,9 +201,7 @@ export default function Panel() {
 
   return (
     <div className="panel-container">
-      <h1>
-        🎉 Hoş geldin {student.ad} {student.soyad}!
-      </h1>
+      <h1>🎉 Hoş geldin {student.ad} {student.soyad}!</h1>
 
       <div className="student-card">
         <p>👤 {student.ad} {student.soyad}</p>
@@ -233,7 +212,7 @@ export default function Panel() {
       <div className="progress-box">
         <p>
           📅 Gün: {progress.currentDay} / 21 <br />
-          🔥 Seri: {progress.streak} gün <br />
+          🔥 Seri: {progress.streak || 0} gün <br />
           Tamamlanan Günler: {progress.completedDays?.length || 0}/21
         </p>
         <div className="progress-bar-wrapper">
@@ -243,7 +222,7 @@ export default function Panel() {
               width: `${progressPercent}%`,
               background: progressPercent >= 100 ? "#00c853" : "#1976d2",
             }}
-          ></div>
+          />
         </div>
       </div>
 
@@ -269,9 +248,7 @@ export default function Panel() {
             <div key={cat.id} className="accordion">
               <div
                 className="accordion-header"
-                onClick={() =>
-                  setOpenCategory(openCategory === cat.id ? null : cat.id)
-                }
+                onClick={() => setOpenCategory(openCategory === cat.id ? null : cat.id)}
               >
                 <h3>{cat.title}</h3>
                 <span>{openCategory === cat.id ? "▲" : "▼"}</span>
@@ -287,9 +264,7 @@ export default function Panel() {
                           onClick={() => handleExerciseStart(ex.id)}
                           disabled={completedExercises.includes(ex.id)}
                           style={{
-                            backgroundColor: completedExercises.includes(ex.id)
-                              ? "#81c784"
-                              : "#4caf50",
+                            backgroundColor: completedExercises.includes(ex.id) ? "#81c784" : "#4caf50",
                           }}
                         >
                           {completedExercises.includes(ex.id)
@@ -304,19 +279,14 @@ export default function Panel() {
                   {cat.miniGame && (
                     <div className="mini-game-box">
                       <h4>🎮 Mini Oyun</h4>
-                      {student.kod === "1234" || cat.miniGame.unlockCondition.every((id) =>
-                        completedExercises.includes(id)
-                      ) ? (
-                        <button
-                          onClick={() => navigate(cat.miniGame.path)}
-                          className="mini-game-btn"
-                        >
+                      {student.kod === "1234" ||
+                      cat.miniGame.unlockCondition.every((id) => completedExercises.includes(id)) ? (
+                        <button onClick={() => navigate(cat.miniGame.path)} className="mini-game-btn">
                           🚀 Oyunu Başlat
                         </button>
                       ) : (
                         <p className="mini-game-info">
-                          🔒 Bu oyun, tüm egzersizler tamamlandıktan sonra
-                          aktif hale gelecektir.
+                          🔒 Bu oyun, tüm egzersizler tamamlandıktan sonra aktif hale gelecektir.
                         </p>
                       )}
                     </div>

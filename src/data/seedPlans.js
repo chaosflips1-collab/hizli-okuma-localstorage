@@ -1,80 +1,55 @@
 // src/data/seedPlans.js
-import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, collection, getDocs } from "firebase/firestore";
+// Bu dosya sadece "seed" amaçlıdır. İşini bitirince projeden import etmeyin.
+// (Tek seferlik çalıştırın → planları ve progress başlangıçlarını oluşturur.)
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCcf0IvRdpb_QjHR_kjpG55S7jZ4wWllVk",
-  authDomain: "hizli-okuma-app-d5d8c.firebaseapp.com",
-  projectId: "hizli-okuma-app-d5d8c",
-  storageBucket: "hizli-okuma-app-d5d8c.firebasestorage.app",
-  messagingSenderId: "253492531255",
-  appId: "1:253492531255:web:b8bbf0427cf7d8ccf3efb2",
-  measurementId: "G-1CFVNTCQ5L"
-};
+import { db } from "../firebase";
+import { doc, setDoc, collection, getDocs } from "firebase/firestore";
+import createPlan from "../utils/createPlan";
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-const generatePlan = () => {
-  const plan = {};
-  const day1 = [
-    { id: "takistoskop", duration: 240 },
-    { id: "kosesel", duration: 240 },
-    { id: "acili", duration: 240 },
-  ];
-  const day2 = [
-    { id: "cifttarafliodak", duration: 240 },
-    { id: "harfbulmaodak", duration: 240 },
-    { id: "odaklanma", duration: 240 },
-    { id: "hafizagelistirme", duration: 240 },
-  ];
-  const day3 = [
-    { id: "gozoyunu", duration: 240 },
-    { id: "buyuyensekil", duration: 240 },
-    { id: "genisleyenkutular", duration: 240 },
-  ];
-  const day4 = [
-    { id: "blokokuma", duration: 240 },
-    { id: "hizliokuma", duration: 240 },
-  ];
-
-  const allDays = [day1, day2, day3, day4];
-  for (let i = 1; i <= 21; i++) {
-    plan[`day${i}`] = { exercises: allDays[(i - 1) % 4] };
-  }
-
-  return plan;
-};
-
+// Planı basacağımız sınıflar
 const classes = ["5A", "5B", "6A", "6B", "7A", "7B", "8A", "8B"];
 
+/**
+ * Her sınıf için createPlan() çağırır.
+ * createPlan: 4 günlük pattern’i 21 güne döngüyle dağıtır ve router id’leriyle UYUMLU yazar.
+ */
 const uploadPlan = async () => {
-  const planData = generatePlan();
-
   for (const className of classes) {
     try {
-      const ref = doc(db, "plans", className);
-      await setDoc(ref, planData, { merge: true });
-      console.log(`✅ ${className} için plan başarıyla yüklendi.`);
-    } catch (error) {
-      console.error(`❌ ${className} için yükleme hatası:`, error);
+      await createPlan(className);
+      console.log(`✅ ${className} için plan oluşturuldu.`);
+    } catch (err) {
+      console.error(`❌ ${className} plan hatası:`, err);
     }
   }
-
-  console.log("🎉 Tüm sınıflar için planlar oluşturuldu!");
+  console.log("🎉 Tüm sınıflar için planlar hazır!");
 };
 
-// 🔹 Öğrenciler için başlangıç progress kaydı oluştur
+/**
+ * Mevcut students koleksiyonundaki her öğrenci için başlangıç progress kaydı oluşturur.
+ * - currentDay: 1
+ * - currentExercise: 0
+ * - completed: false
+ */
 const createInitialProgress = async () => {
   try {
     const studentsSnap = await getDocs(collection(db, "students"));
     for (const docSnap of studentsSnap.docs) {
       const student = docSnap.data();
-      const progressRef = doc(db, "progress", student.kod);
 
+      // Beklenen alan isimleri: student.kod, student.sinif
+      const studentCode = String(student.kod || "").trim();
+      const className = String(student.sinif || "").trim();
+
+      if (!studentCode || !className) {
+        console.warn("⚠️ Eksik öğrenci alanı, atlandı:", student);
+        continue;
+      }
+
+      const progressRef = doc(db, "progress", studentCode);
       const progressData = {
-        studentCode: student.kod,
-        className: student.sinif,
+        studentCode,
+        className,
         currentDay: 1,
         currentExercise: 0,
         completed: false,
@@ -82,7 +57,7 @@ const createInitialProgress = async () => {
       };
 
       await setDoc(progressRef, progressData, { merge: true });
-      console.log(`📘 ${student.kod} (${student.sinif}) için başlangıç kaydı oluşturuldu.`);
+      console.log(`📘 ${studentCode} (${className}) için başlangıç progress yazıldı.`);
     }
 
     console.log("✅ Tüm öğrenciler için progress başlangıçları oluşturuldu!");
@@ -91,7 +66,10 @@ const createInitialProgress = async () => {
   }
 };
 
-// 🔥 Çalıştır
+// 🚀 ÇALIŞTIR (tek seferlik)
+// Not: Bu dosyayı projeye import ederseniz her açılışta çalışır. Öneri:
+// - Geçici bir admin butonundan çağırın veya
+// - Bir kere console'dan (devtools) import edip çalıştırın.
 (async () => {
   await uploadPlan();
   await createInitialProgress();

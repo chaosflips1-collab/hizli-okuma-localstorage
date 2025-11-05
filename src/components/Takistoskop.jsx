@@ -1,181 +1,162 @@
-import React, { useState, useEffect } from "react";
+// src/components/Takistoskop.jsx
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import library from "../data/library.json";
-import { db } from "../firebase";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
+import completeExercise from "../utils/completeExercise";
 import "./TakistoskopFixed.css";
 
 export default function Takistoskop() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { fromExercisePlayer, studentCode, className, duration } = location.state || {};
+  // Egzersiz Player'dan gelirse süre override edilebilir
+  const { duration: fromPlayerDuration } = location.state || {};
+  const duration = fromPlayerDuration || 300; // varsayılan 5 dk
 
-  const [material, setMaterial] = useState("harf");
+  const student = JSON.parse(localStorage.getItem("activeStudent") || "{}");
+
+  // ---- Ayarlar
+  const [material, setMaterial] = useState("harf"); // harf | rakam | kelime
   const [speed, setSpeed] = useState(1000);
   const [bgColor, setBgColor] = useState("#ffffff");
   const [font, setFont] = useState("Arial");
   const [fontSize, setFontSize] = useState(32);
   const [showSettings, setShowSettings] = useState(false);
 
+  // ---- Oyun durumu
   const [currentItem, setCurrentItem] = useState("");
-  const [answer, setAnswer] = useState("");
   const [showItem, setShowItem] = useState(false);
+  const [answer, setAnswer] = useState("");
 
   const [correct, setCorrect] = useState(0);
   const [wrong, setWrong] = useState(0);
   const [score, setScore] = useState(0);
   const [record, setRecord] = useState(0);
+
   const [time, setTime] = useState(0);
   const [running, setRunning] = useState(false);
-  const [exerciseFinished, setExerciseFinished] = useState(false);
+  const tRef = useRef(null);
 
-  const studentClass = localStorage.getItem("studentClass") || "6";
+  // ---- Havuzlar
+  const classKey = (() => {
+    const s = (student?.sinif || "").toString().trim().toUpperCase(); // örn. "6A"
+    const digit = s.match(/\d+/)?.[0] || "6";
+    return digit; // "5", "6" veya "7"
+  })();
+
   const letters = library.letters || [];
   const numbers = library.numbers || [];
-  const words = library.takistoskop?.[studentClass] || [];
 
-  const getRandomItem = () => {
-    if (material === "harf") return letters[Math.floor(Math.random() * letters.length)];
-    if (material === "rakam") return numbers[Math.floor(Math.random() * numbers.length)];
-    return words[Math.floor(Math.random() * words.length)];
+  const wordPool =
+    (library.takistoskop && library.takistoskop[classKey]) ||
+    // havuz boşsa İngilizce 7. seviye kelimeleri fallback
+    library.takistoskop?.["7"] ||
+    [];
+
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  const nextItem = () => {
+    if (material === "harf") return pick(letters);
+    if (material === "rakam") return pick(numbers);
+    return pick(wordPool);
   };
 
-  const startExercise = () => {
-    setRunning(true);
+  const start = () => {
+    // materyal için havuz uygun mu?
+    if (material === "harf" && letters.length === 0) return alert("Harf havuzu boş.");
+    if (material === "rakam" && numbers.length === 0) return alert("Rakam havuzu boş.");
+    if (material === "kelime" && wordPool.length === 0) return alert("Bu sınıf için kelime havuzu boş.");
+
+    setCorrect(0);
+    setWrong(0);
+    setScore(0);
     setTime(0);
-    setExerciseFinished(false);
-    const item = getRandomItem();
+    setAnswer("");
+    setRunning(true);
+
+    const item = nextItem();
     setCurrentItem(item);
     setShowItem(true);
     setTimeout(() => setShowItem(false), speed);
   };
 
-  const checkAnswer = () => {
-    if (!answer.trim()) return alert("Yanıt vermediniz!");
-    if (answer.trim().toLowerCase() === currentItem.toString().toLowerCase()) {
-      setCorrect((c) => c + 1);
-      setScore((s) => s + 10);
-      if (score + 10 > record) setRecord(score + 10);
-    } else setWrong((w) => w + 1);
+  const stop = () => setRunning(false);
 
-    setAnswer("");
-    const newItem = getRandomItem();
-    setCurrentItem(newItem);
+  const revealNew = () => {
+    const item = nextItem();
+    setCurrentItem(item);
     setShowItem(true);
     setTimeout(() => setShowItem(false), speed);
   };
 
-  // ⏱ Süre takibi ve otomatik bitiş
-  useEffect(() => {
-    let interval;
-    if (running) {
-      interval = setInterval(() => {
-        setTime((prev) => {
-          const newTime = prev + 1;
-          if (newTime === 120) setSpeed(800);
-          if (newTime === 240) setSpeed(600);
-          if (newTime >= (duration || 300)) {
-            clearInterval(interval);
-            setRunning(false);
-            setExerciseFinished(true);
-          }
-          return newTime;
-        });
-      }, 1000);
+  const submitAnswer = () => {
+    if (!running) return;
+    if (!answer.trim()) {
+      alert("Yanıt vermediniz!");
+      return;
     }
-    return () => clearInterval(interval);
-  }, [running, duration]);
 
-  // ✅ Egzersiz tamamlanınca sıradaki egzersize geç
+    const ok =
+      answer.trim().toLowerCase() === currentItem.toString().toLowerCase();
+
+    if (ok) {
+      setCorrect((c) => c + 1);
+      setScore((s) => {
+        const ns = s + 10;
+        if (ns > record) setRecord(ns);
+        return ns;
+      });
+    } else {
+      setWrong((w) => w + 1);
+    }
+
+    setAnswer("");
+    revealNew();
+  };
+
+  // Zamanlayıcı
   useEffect(() => {
-    const finishAndGoNext = async () => {
-      if (!exerciseFinished) return;
-
-      if (fromExercisePlayer && studentCode && className) {
-        try {
-          const progressRef = doc(db, "progress", studentCode);
-          const progressSnap = await getDoc(progressRef);
-
-          if (!progressSnap.exists()) {
-            alert("Öğrenci ilerlemesi bulunamadı, panel'e dönülüyor.");
-            return navigate("/panel", { replace: true });
-          }
-
-          const progressData = progressSnap.data();
-          let { currentDay, currentExercise, plan } = progressData;
-
-          const dayKey = `day${currentDay}`;
-          const exercises = plan?.[dayKey] || [];
-
-          let newExercise = (currentExercise || 0) + 1;
-          let newDay = currentDay;
-          let completed = false;
-
-          if (newExercise >= exercises.length) {
-            newExercise = 0;
-            newDay++;
-            if (newDay > 21) {
-              completed = true;
-              alert("🎉 Tebrikler! 21 günlük planı tamamladınız!");
-            }
-          }
-
-          const updatedData = {
-            ...progressData,
-            currentDay: newDay,
-            currentExercise: newExercise,
-            completed,
-            lastUpdate: new Date(),
-          };
-
-          await updateDoc(progressRef, updatedData);
-
-          // sıradaki egzersizi al
-          const nextDayKey = `day${updatedData.currentDay}`;
-          const nextExercise =
-            updatedData.plan?.[nextDayKey]?.[updatedData.currentExercise];
-
-          if (nextExercise && !completed) {
-            alert("✅ Egzersiz tamamlandı, sıradaki çalışmaya geçiliyor...");
-            navigate(`/${nextExercise.id}`, {
-              state: {
-                fromExercisePlayer: true,
-                studentCode,
-                className,
-                duration: nextExercise.duration,
-              },
-              replace: true,
-            });
-          } else {
-            alert("🎯 Bugünkü egzersizler tamamlandı!");
-            navigate("/panel", { replace: true });
-          }
-        } catch (err) {
-          console.error("🔥 İlerleme güncelleme hatası:", err);
-          alert("Bir hata oluştu, panel'e yönlendiriliyorsunuz.");
-          navigate("/panel", { replace: true });
-        }
-      } else {
-        alert("🎯 Egzersiz tamamlandı!");
-        navigate("/panel", { replace: true });
+    const clear = () => {
+      if (tRef.current) {
+        clearInterval(tRef.current);
+        tRef.current = null;
       }
     };
 
-    finishAndGoNext();
-  }, [exerciseFinished, fromExercisePlayer, studentCode, className, navigate]);
+    if (running) {
+      clear();
+      tRef.current = setInterval(() => {
+        setTime((prev) => {
+          const t = prev + 1;
+
+          // hız kademeleri
+          if (t === 120) setSpeed((s) => Math.max(300, s - 200)); // 1. dk: 1000->800
+          if (t === 240) setSpeed((s) => Math.max(300, s - 200)); // 2. dk: 800->600
+
+          if (t >= duration) {
+            clear();
+            setRunning(false);
+            alert("🎯 Takistoskop egzersizi tamamlandı!");
+            completeExercise(student.kod, student.sinif, navigate);
+          }
+          return t;
+        });
+      }, 1000);
+    } else {
+      clear();
+    }
+
+    return () => clear();
+  }, [running, duration, navigate, student.kod, student.sinif]);
 
   const exitExercise = () => {
     setRunning(false);
-    setCurrentItem("");
-    setAnswer("");
-    alert("Egzersizden çıkış yapıldı.");
     navigate("/panel", { replace: true });
   };
 
   return (
     <div className="takistoskop-container">
-      <h2 className="takistoskop-title">🎯 Takistoskop Çalışması 🎯</h2>
+      <h2 className="takistoskop-title">🎯 Takistoskop Çalışması</h2>
 
       <div className="top-section">
         <div className="display-box">
@@ -198,8 +179,9 @@ export default function Takistoskop() {
               onChange={(e) => setAnswer(e.target.value)}
               className="answer-input"
               disabled={!running}
+              onKeyDown={(e) => e.key === "Enter" && submitAnswer()}
             />
-            <button onClick={checkAnswer} className="answer-btn" disabled={!running}>
+            <button className="answer-btn" onClick={submitAnswer} disabled={!running}>
               ✅ Tamam
             </button>
           </div>
@@ -211,17 +193,14 @@ export default function Takistoskop() {
           <p>❌ Yanlış: {wrong}</p>
           <p>⭐ Skor: {score}</p>
           <p>🥇 Rekor: {record}</p>
-          <p>⏳ Kalan Süre: {(duration || 300) - time} sn</p>
+          <p>⏳ Kalan Süre: {Math.max(0, duration - time)} sn</p>
           <p>⚡ Hız: {speed} ms</p>
         </div>
       </div>
 
       {/* ⚙️ Ayarlar */}
       <div className="settings-wrapper">
-        <div
-          className="settings-header"
-          onClick={() => setShowSettings((prev) => !prev)}
-        >
+        <div className="settings-header" onClick={() => setShowSettings((v) => !v)}>
           ⚙️ Ayarlar Menüsü {showSettings ? "▲" : "▼"}
         </div>
 
@@ -258,6 +237,14 @@ export default function Takistoskop() {
               disabled={running}
             />
 
+            <label>Font:</label>
+            <select value={font} onChange={(e) => setFont(e.target.value)} disabled={running}>
+              <option value="Arial">Arial</option>
+              <option value="Verdana">Verdana</option>
+              <option value="Courier New">Courier New</option>
+              <option value="Times New Roman">Times New Roman</option>
+            </select>
+
             <label>Font Boyutu:</label>
             <input
               type="number"
@@ -272,10 +259,13 @@ export default function Takistoskop() {
       </div>
 
       <div className="button-row">
-        <button onClick={startExercise} className="start-btn" disabled={running}>
+        <button className="start-btn" onClick={start} disabled={running}>
           ✔ Başla
         </button>
-        <button onClick={exitExercise} className="exit-btn">
+        <button className="stop-btn" onClick={stop} disabled={!running}>
+          ⏸ Durdur
+        </button>
+        <button className="exit-btn" onClick={exitExercise}>
           ❌ Çıkış
         </button>
       </div>

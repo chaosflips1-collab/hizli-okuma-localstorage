@@ -28,12 +28,19 @@ import GameDay1 from "./components/GameDay1";
 import GameDay2 from "./components/GameDay2";
 import GameDay3 from "./components/GameDay3";
 
-// 🔐 Öğrenci için özel route
+// 🔐 Öğrenci için özel route (JSON.parse korumalı)
 function PrivateRoute({ element }) {
-  const studentData = localStorage.getItem("activeStudent");
-  if (!studentData) return <Navigate to="/" />;
+  const raw = localStorage.getItem("activeStudent");
+  if (!raw) return <Navigate to="/" />;
 
-  const student = JSON.parse(studentData);
+  let student = null;
+  try {
+    student = JSON.parse(raw);
+  } catch {
+    // bozuk kayıt varsa temizle ve girişe dön
+    localStorage.removeItem("activeStudent");
+    return <Navigate to="/" />;
+  }
 
   // 🎮 sadece 1234 kodlu öğrenci (test hesabı) oyunlara erişebilir
   const isTester = student.kod?.trim() === "1234";

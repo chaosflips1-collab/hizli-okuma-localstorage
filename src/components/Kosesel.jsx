@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+// src/components/Kosesel.jsx
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import library from "../data/library.json";
-import { db } from "../firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import completeExercise from "../utils/completeExercise";
 import "./Kosesel.css";
 
 export default function Kosesel() {
@@ -17,112 +17,64 @@ export default function Kosesel() {
   const [running, setRunning] = useState(false);
   const [letters, setLetters] = useState(["", ""]);
 
-  const [speed] = useState(1000);
+  const speed = 1000; // bilgi amaçlı gösteriyoruz
   const pool = library.letters || [];
+  const timerRef = useRef(null);
 
   const generateLetters = () => [
-    pool[Math.floor(Math.random() * pool.length)],
-    pool[Math.floor(Math.random() * pool.length)],
+    pool[Math.floor(Math.random() * pool.length)] || "",
+    pool[Math.floor(Math.random() * pool.length)] || "",
   ];
 
   const startExercise = () => {
+    if (!pool.length) {
+      alert("⚠️ Harf havuzu bulunamadı.");
+      return;
+    }
     setRunning(true);
     setTime(0);
     setLetters(generateLetters());
   };
 
+  // süre/akış
   useEffect(() => {
-    let interval;
+    const clear = () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+
     if (running) {
-      interval = setInterval(() => {
+      clear(); // olası eski timer’ı temizle
+      timerRef.current = setInterval(() => {
         setTime((prev) => {
-          const newTime = prev + 1;
+          const t = prev + 1;
 
-          if (newTime % 3 === 0) setLetters(generateLetters());
+          // 3 sn’de bir harfleri değiştir
+          if (t % 3 === 0) setLetters(generateLetters());
 
-          if (newTime >= 180) {
-            clearInterval(interval);
+          // 180 sn dolunca bitir
+          if (t >= 180) {
+            clear();
             setRunning(false);
-            setTimeout(() => handleExerciseComplete(), 500);
+            // tek yerden ilerleme: plan sıradaki egzersize geçer / mini oyun tetiklenir
+            alert("🎯 Köşesel Egzersiz tamamlandı!");
+            completeExercise(student.kod, student.sinif, navigate);
           }
-          return newTime;
+          return t;
         });
       }, 1000);
+    } else {
+      clear();
     }
-    return () => clearInterval(interval);
-  }, [running]);
 
-  // ✅ Egzersiz bitince sıradaki egzersize geç
-  const handleExerciseComplete = async () => {
-    alert("🎯 Köşesel Egzersiz tamamlandı!");
-
-    try {
-      const progressRef = doc(db, "progress", student.kod);
-      const progressSnap = await getDoc(progressRef);
-
-      if (!progressSnap.exists()) {
-        alert("İlerleme verisi bulunamadı!");
-        return navigate("/panel");
-      }
-
-      const progressData = progressSnap.data();
-      let { currentDay, currentExercise, plan } = progressData;
-      const dayKey = `day${currentDay}`;
-      const exercises = plan?.[dayKey] || [];
-
-      let newExercise = (currentExercise || 0) + 1;
-      let newDay = currentDay;
-      let completed = false;
-
-      if (newExercise >= exercises.length) {
-        newExercise = 0;
-        newDay++;
-        if (newDay > 21) {
-          completed = true;
-          alert("🎉 Tebrikler! 21 günlük plan tamamlandı!");
-        }
-      }
-
-      const updatedProgress = {
-        ...progressData,
-        currentDay: newDay,
-        currentExercise: newExercise,
-        completed,
-        lastUpdate: new Date(),
-      };
-
-      await updateDoc(progressRef, updatedProgress);
-
-      // sıradaki egzersizi bul
-      const nextDayKey = `day${updatedProgress.currentDay}`;
-      const nextExercise =
-        updatedProgress.plan?.[nextDayKey]?.[updatedProgress.currentExercise];
-
-      if (nextExercise && !completed) {
-        alert("✅ Sıradaki egzersize geçiliyor...");
-        navigate(`/${nextExercise.id}`, {
-          state: {
-            fromExercisePlayer: true,
-            studentCode: student.kod,
-            className: student.sinif,
-            duration: nextExercise.duration,
-          },
-          replace: true,
-        });
-      } else {
-        navigate("/panel", { replace: true });
-      }
-    } catch (err) {
-      console.error("🔥 Plan ilerletme hatası:", err);
-      alert("Bir hata oluştu, panel'e dönülüyor.");
-      navigate("/panel", { replace: true });
-    }
-  };
+    return () => clear();
+  }, [running, navigate, student.kod, student.sinif]);
 
   const exitExercise = () => {
     setRunning(false);
     setLetters(["", ""]);
-    alert("Egzersizden çıkış yapıldı.");
     navigate("/panel");
   };
 
@@ -148,7 +100,7 @@ export default function Kosesel() {
 
       <div className="info-box">
         <h4>📋 Bilgi Tablosu</h4>
-        <p>⏳ Kalan Süre: {180 - time} sn</p>
+        <p>⏳ Kalan Süre: {Math.max(0, 180 - time)} sn</p>
         <p>⚡ Hız: {speed} ms</p>
       </div>
 
