@@ -339,3 +339,32 @@
   color: #2563eb;
   transform: translateX(4px);
 }
+.mini-game-box {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 12px;
+  background: #f5faff;
+  border: 2px dashed #1976d2;
+  text-align: center;
+}
+
+.mini-game-btn {
+  background: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.mini-game-btn:hover {
+  background: #2e7d32;
+}
+
+.mini-game-info {
+  color: #1976d2;
+  font-size: 14px;
+  margin-top: 8px;
+}

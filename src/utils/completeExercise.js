@@ -7,7 +7,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
  * - progress koleksiyonundaki currentDay & currentExercise ilerletilir.
  * - plan koleksiyonundan sıradaki egzersiz alınır.
  * - Bir günün egzersizleri tamamlanınca nextAvailableDate = yarın olarak atanır.
- * - navigate() ile otomatik geçiş yapılır.
+ * - Eğer day1/day2/day3 biterse -> ilgili mini oyun ekranına yönlendirir.
  */
 export default async function completeExercise(studentCode, className, navigate) {
   try {
@@ -88,14 +88,35 @@ export default async function completeExercise(studentCode, className, navigate)
 
     // 🚀 Sıradaki egzersizi Firestore planından bul
     const nextDayKey = `day${updatedProgress.currentDay}`;
-    const nextExercise = planData[nextDayKey]?.exercises?.[updatedProgress.currentExercise];
+    const nextExercise =
+      planData[nextDayKey]?.exercises?.[updatedProgress.currentExercise];
 
+    // 🕹 Gün tamamlandıysa ilgili mini oyuna yönlendir
     if (dayCompleted) {
+      const finishedDay = currentDay; // day1, day2, day3...
+      if (finishedDay === 1) {
+        alert("🎮 Göz Algılama çalışmaları tamamlandı! Mini oyuna geçiliyor...");
+        navigate("/gameday1", { replace: true });
+        return;
+      }
+      if (finishedDay === 2) {
+        alert("🎯 Dikkat ve Konsantrasyon tamamlandı! Mini oyuna geçiliyor...");
+        navigate("/gameday2", { replace: true });
+        return;
+      }
+      if (finishedDay === 3) {
+        alert("💪 Göz Kaslarını Geliştirme tamamlandı! Mini oyuna geçiliyor...");
+        navigate("/gameday3", { replace: true });
+        return;
+      }
+
+      // diğer günlerde normal döngü devam eder
       alert("✅ Bugünkü çalışmalar tamamlandı! Yarın yeni egzersizler açılacak 🎯");
       navigate("/panel", { replace: true });
       return;
     }
 
+    // 🚀 Devam eden egzersiz varsa sıradakine geç
     if (nextExercise) {
       navigate(`/${nextExercise.id}`, {
         state: {

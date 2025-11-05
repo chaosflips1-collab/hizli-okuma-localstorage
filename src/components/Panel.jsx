@@ -24,9 +24,8 @@ export default function Panel() {
   const [progress, setProgress] = useState(null);
   const [openCategory, setOpenCategory] = useState(null);
   const [completedExercises, setCompletedExercises] = useState([]);
-  const [countdown, setCountdown] = useState(""); // ⏳ geri sayım eklendi
+  const [countdown, setCountdown] = useState("");
 
-  // 🔹 Öğrenci verisini ve ilerlemesini getir
   useEffect(() => {
     const fetchStudent = async () => {
       let activeStudent = null;
@@ -57,7 +56,6 @@ export default function Panel() {
         const progressSnap = await getDoc(progressRef);
 
         if (!progressSnap.exists()) {
-          // 🔹 21 Günlük plan
           const generatedPlan = {};
           const allDays = [
             ["takistoskop", "kosesel", "acili"],
@@ -85,7 +83,7 @@ export default function Panel() {
             currentExercise: null,
             plan: generatedPlan,
             lastUpdate: serverTimestamp(),
-            nextAvailableDate: null, // 🔒 Kilit tarihi (ilk gün açık)
+            nextAvailableDate: null,
           };
 
           await setDoc(progressRef, newProgress);
@@ -105,19 +103,17 @@ export default function Panel() {
     fetchStudent();
   }, [studentFromLogin, navigate]);
 
-  // 🔹 Gün kilidi kontrolü
   const today = new Date().toISOString().split("T")[0];
   const isLocked =
     progress?.nextAvailableDate && today < progress.nextAvailableDate;
 
-  // ⏳ Geri sayım hesaplama (her 1 saniyede bir yenilenir)
   useEffect(() => {
     if (!isLocked || !progress?.nextAvailableDate) {
       setCountdown("");
       return;
     }
 
-    const target = new Date(progress.nextAvailableDate + "T00:00:00"); // yarın 00:00
+    const target = new Date(progress.nextAvailableDate + "T00:00:00");
     const interval = setInterval(() => {
       const now = new Date();
       const diff = target - now;
@@ -136,7 +132,6 @@ export default function Panel() {
     return () => clearInterval(interval);
   }, [progress?.nextAvailableDate, isLocked]);
 
-  // 🔹 Egzersiz başlat
   const handleExerciseStart = async (id) => {
     if (isLocked) {
       alert("🔒 Bugünkü çalışmaları tamamladın. Yarın tekrar gel 💪");
@@ -151,7 +146,6 @@ export default function Panel() {
     navigate(`/${id}`);
   };
 
-  // 🔹 Çıkış
   const handleLogout = () => {
     localStorage.removeItem("activeStudent");
     navigate("/");
@@ -168,7 +162,6 @@ export default function Panel() {
     0
   );
 
-  // 🔹 Kategoriler
   const categories = [
     {
       id: "goz",
@@ -178,6 +171,10 @@ export default function Panel() {
         { name: "Köşesel Görüş", id: "kosesel" },
         { name: "Açılı Görüş", id: "acili" },
       ],
+      miniGame: {
+        path: "/gameday1",
+        unlockCondition: ["takistoskop", "kosesel", "acili"],
+      },
     },
     {
       id: "dikkat",
@@ -188,6 +185,15 @@ export default function Panel() {
         { name: "Odaklanma Çalışması", id: "odaklanma" },
         { name: "Hafıza Geliştirme Çalışması", id: "hafizagelistirmecalismasi" },
       ],
+      miniGame: {
+        path: "/gameday2",
+        unlockCondition: [
+          "cifttarafliodak",
+          "harfbulmaodakcalismasi",
+          "odaklanma",
+          "hafizagelistirmecalismasi",
+        ],
+      },
     },
     {
       id: "kas",
@@ -197,6 +203,10 @@ export default function Panel() {
         { name: "Büyüyen Şekil", id: "buyuyensekil" },
         { name: "Genişleyen Kutular", id: "genisleyenkutular" },
       ],
+      miniGame: {
+        path: "/gameday3",
+        unlockCondition: ["gozoyunu", "buyuyensekil", "genisleyenkutular"],
+      },
     },
     {
       id: "hizli",
@@ -214,14 +224,12 @@ export default function Panel() {
         🎉 Hoş geldin {student.ad} {student.soyad}!
       </h1>
 
-      {/* 🔹 Öğrenci Kartı */}
       <div className="student-card">
         <p>👤 {student.ad} {student.soyad}</p>
         <p>📚 {student.sinif}</p>
         <p>🆔 {student.kod}</p>
       </div>
 
-      {/* 🔹 İlerleme Bilgisi */}
       <div className="progress-box">
         <p>
           📅 Gün: {progress.currentDay} / 21 <br />
@@ -239,12 +247,10 @@ export default function Panel() {
         </div>
       </div>
 
-      {/* 🔒 Gün Kilidi Uyarısı */}
       {isLocked && (
         <div className="locked-info">
           🔒 Bugünkü egzersizleri tamamladın! <br />
-          Yarın ({progress.nextAvailableDate}) tekrar gel ve Day{" "}
-          {progress.currentDay} çalışmalarına devam et. 🎯
+          Yarın ({progress.nextAvailableDate}) tekrar gel 🎯
           <br />
           <span style={{ fontSize: "1rem", color: "#555" }}>
             ⏳ Yeni egzersizlerin açılmasına: {countdown}
@@ -252,12 +258,10 @@ export default function Panel() {
         </div>
       )}
 
-      {/* 🔹 Çıkış Butonu */}
       <button className="logout-btn" onClick={handleLogout}>
         🚪 Çıkış Yap
       </button>
 
-      {/* 🔹 Kategoriler */}
       {!isLocked && (
         <>
           <h2 className="exercise-title">🚀 Çalışma Konuları</h2>
@@ -295,6 +299,28 @@ export default function Panel() {
                       </li>
                     ))}
                   </ul>
+
+                  {/* 🎮 Mini Oyun Alanı */}
+                  {cat.miniGame && (
+                    <div className="mini-game-box">
+                      <h4>🎮 Mini Oyun</h4>
+                      {student.kod === "1234" || cat.miniGame.unlockCondition.every((id) =>
+                        completedExercises.includes(id)
+                      ) ? (
+                        <button
+                          onClick={() => navigate(cat.miniGame.path)}
+                          className="mini-game-btn"
+                        >
+                          🚀 Oyunu Başlat
+                        </button>
+                      ) : (
+                        <p className="mini-game-info">
+                          🔒 Bu oyun, tüm egzersizler tamamlandıktan sonra
+                          aktif hale gelecektir.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

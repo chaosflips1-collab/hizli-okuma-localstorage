@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
@@ -24,10 +23,28 @@ import Genisleyenkutular from "./components/Genisleyenkutular";
 import HizliOkuma from "./components/HizliOkuma";
 import BlokOkuma from "./components/BlokOkuma";
 
+// ✅ Mini Oyunlar
+import GameDay1 from "./components/GameDay1";
+import GameDay2 from "./components/GameDay2";
+import GameDay3 from "./components/GameDay3";
+
 // 🔐 Öğrenci için özel route
 function PrivateRoute({ element }) {
-  const student = localStorage.getItem("activeStudent");
-  return student ? element : <Navigate to="/" />;
+  const studentData = localStorage.getItem("activeStudent");
+  if (!studentData) return <Navigate to="/" />;
+
+  const student = JSON.parse(studentData);
+
+  // 🎮 sadece 1234 kodlu öğrenci (test hesabı) oyunlara erişebilir
+  const isTester = student.kod?.trim() === "1234";
+
+  // 🧱 Eğer mini oyun rotasına gidiyorsa ve test öğrenci değilse yönlendir
+  if (window.location.pathname.startsWith("/gameday") && !isTester) {
+    alert("🚫 Bu oyun yalnızca test hesabına (1234) açıktır.");
+    return <Navigate to="/panel" replace />;
+  }
+
+  return element;
 }
 
 // 🔐 Admin için özel route
@@ -40,6 +57,7 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* 🔹 Giriş / Panel */}
         <Route path="/" element={<Login />} />
         <Route path="/panel" element={<PrivateRoute element={<Panel />} />} />
         <Route path="/kategori/:id" element={<PrivateRoute element={<Kategori />} />} />
@@ -62,6 +80,12 @@ function App() {
         <Route path="/hizliokuma" element={<PrivateRoute element={<HizliOkuma />} />} />
         <Route path="/blokokuma" element={<PrivateRoute element={<BlokOkuma />} />} />
 
+        {/* 🎮 Mini Oyunlar */}
+        <Route path="/gameday1" element={<PrivateRoute element={<GameDay1 />} />} />
+        <Route path="/gameday2" element={<PrivateRoute element={<GameDay2 />} />} />
+        <Route path="/gameday3" element={<PrivateRoute element={<GameDay3 />} />} />
+
+        {/* 🔹 Diğer */}
         <Route path="/addstudent" element={<AddStudent />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

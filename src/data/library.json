@@ -1,79 +1,64 @@
 {
   "letters": ["A","B","C","Ç","D","E","F","G","Ğ","H","I","İ","J","K","L","M","N","O","Ö","P","R","S","Ş","T","U","Ü","V","Y","Z"],
   "numbers": ["0","1","2","3","4","5","6","7","8","9"],
+
   "takistoskop": {
-    "5": [],
-    "6": [
-      "Time",
-      "School",
-      "Life",
-      "Finish",
-      "Page",
-      "Share",
-      "Opinion",
-      "Look",
-      "Match",
-      "Take a nap",
-      "Rest",
-      "Help dad",
-      "Visit grandmother",
-      "Take care of the pet",
-      "Run errands",
-      "Practice",
-      "Ask",
-      "Answer",
-      "Write",
-      "Question",
-      "Grade",
-      "Wake up",
-      "Have breakfast",
-      "Go to school",
-      "Lesson",
-      "Start",
-      "Go to bed"
-    ],
-    "7": []
+    "5": ["masa", "kalem", "okul", "kitap", "elma", "çiçek", "deniz", "tahta", "göz", "rüya", "mavi", "bulut", "güneş", "zaman", "oyun"],
+    "6": ["Time", "School", "Life", "Finish", "Page", "Share", "Opinion", "Look", "Match", "Take a nap", "Rest", "Help dad", "Visit grandmother", "Take care of the pet", "Run errands"],
+    "7": ["memory", "task", "focus", "practice", "attention", "goal", "routine", "lesson", "success", "progress", "repeat", "train", "study", "think", "understand"]
   },
+
   "ciftTarafliOdak": {
-    "5": [],
-    "6": [
-      "Talk",
-      "Favourite",
-      "Cartoon",
-      "Play volleyball",
-      "Help mother",
-      "Step dance class",
-      "Diary",
-      "New",
-      "Take",
-      "Timetable",
-      "Busy",
-      "Attend chess clup",
-      "Break time",
-      "Date",
-      "Take english course",
-      "Read",
-      "Put in order",
-      "Visual",
-      "Have dinner",
-      "Evening",
-      "Correct",
-      "Arrive",
-      "Morning",
-      "Keep a diary",
-      "Partner",
-      "Get up",
-      "Game",
-      "Work in pairs",
-      "Take turns",
-      "Early",
-      "Have lunch",
-      "Get dressed",
-      "Daily routine",
-      "Song",
-      "Complete",
-      "Eat"
-    ],
-    "7": []
+    "5": ["dikkat", "odak", "renk", "şekil", "bellek", "ışık", "bakış", "hız", "denge", "ritim", "noktalar", "çizgi", "alan", "yön", "düzen"],
+    "6": ["Talk", "Favourite", "Cartoon", "Play volleyball", "Help mother", "Step dance class", "Diary", "New", "Take", "Timetable", "Busy", "Attend chess club", "Break time", "Date", "Visual"],
+    "7": ["perception", "concentration", "balance", "speed", "reaction", "decision", "reflex", "memory", "spot", "direction", "pattern", "alignment", "focus", "depth", "view"]
+  },
+
+  "harfBulmaOdakCalismasi": {
+    "5": ["harf", "kelime", "sayı", "noktalar", "çizgi", "yön", "bakış", "görüş", "dizi", "şekil", "tarama", "renk", "kod", "sembol", "şema"],
+    "6": ["Letter", "Find", "Word", "Symbol", "Pattern", "Hide", "Seek", "Color", "Mark", "Group", "Identify", "Circle", "Type", "Focus", "Note"],
+    "7": ["scan", "detect", "observe", "compare", "highlight", "analyze", "symbol", "figure", "code", "form", "line", "select", "align", "look", "search"]
+  },
+
+  "odaklanma": {
+    "5": ["sabır", "karar", "düşün", "plan", "fokus", "derin", "hedef", "düzen", "bakış", "sakin", "denge", "güç", "motivasyon", "hazırlık", "başarı"],
+    "6": ["Concentrate", "Think", "Focus", "Deep", "Plan", "Calm", "Control", "Manage", "Organize", "Stay", "Train", "Repeat", "Perform", "Prepare", "Relax"],
+    "7": ["discipline", "routine", "consistency", "attention", "awareness", "goal", "commitment", "clarity", "energy", "self-control", "mindset", "patience", "effort", "habit", "strategy"]
+  },
+
+  "hafizaGelistirme": {
+    "5": ["hatıra", "anı", "tekrar", "yazı", "renk", "isim", "eşya", "mekan", "numara", "şekil", "düşünce", "kelime", "ezber", "bağlantı", "akıl"],
+    "6": ["Memory", "Recall", "Remember", "List", "Picture", "Place", "Word", "Connect", "Idea", "Note", "Concept", "Number", "Link", "Association", "Thought"],
+    "7": ["sequence", "storage", "retrieve", "encode", "mental", "process", "memorize", "learn", "rehearse", "retain", "map", "store", "chunk", "train", "trace"]
+  },
+
+  "gozOyunu": {
+    "5": ["ağaç", "deniz", "rüzgar", "taş", "kuş", "bulut", "kar", "dal", "çiçek", "yaprak"],
+    "6": ["Tree", "Sea", "Wind", "Rock", "Bird", "Cloud", "Rain", "Branch", "Flower", "Leaf"],
+    "7": ["forest", "storm", "mountain", "valley", "sky", "sand", "island", "wave", "breeze", "horizon"]
+  },
+
+  "buyuyenSekil": {
+    "5": ["daire", "kare", "üçgen", "yıldız", "kalp", "ok", "çember", "yay", "nokta", "çizgi"],
+    "6": ["Circle", "Square", "Triangle", "Star", "Heart", "Arrow", "Ring", "Dot", "Line", "Frame"],
+    "7": ["shape", "outline", "expand", "scale", "form", "geometry", "design", "visual", "grow", "motion"]
+  },
+
+  "genisleyenKutular": {
+    "5": ["kutu", "alan", "sınır", "çerçeve", "blok", "katman", "şekil", "çizgi", "gölge", "ışık"],
+    "6": ["Box", "Frame", "Layer", "Border", "Shadow", "Light", "Area", "Shape", "Design", "Space"],
+    "7": ["dimension", "depth", "expand", "field", "outline", "form", "visual", "scale", "plane", "level"]
+  },
+
+  "blokOkuma": {
+    "5": ["hikaye", "kahraman", "macera", "bilgi", "metin", "düşünce", "anlam", "okuma", "yazı", "kitap"],
+    "6": ["Story", "Hero", "Adventure", "Book", "Paragraph", "Meaning", "Sentence", "Idea", "Logic", "Summary"],
+    "7": ["context", "analysis", "interpret", "theme", "concept", "understand", "paragraph", "structure", "topic", "message"]
+  },
+
+  "hizliOkuma": {
+    "5": ["zaman", "saniye", "hız", "bakış", "fokus", "metin", "kelime", "akış", "okuma", "tempo"],
+    "6": ["Speed", "Time", "Focus", "Flow", "Sentence", "Eye", "Track", "Move", "Read", "Understand"],
+    "7": ["pace", "timing", "scan", "skim", "flow", "awareness", "speed", "grasp", "capture", "process"]
   }
 }
